@@ -1,6 +1,7 @@
 from PyQt4.QtCore import pyqtSignal, QSocketNotifier, QThread
 import serial
 
+
 class Connection(QThread):
     
     BUFFER_SIZE = 8
@@ -13,12 +14,14 @@ class Connection(QThread):
 
     def begin(self,  instrument):
         self.instrument = instrument
-    
-    def run(self):
         self.packet = bytearray('')
         self.old_data = None
         print self.TAG, "Connected:", self.input
+        self.start()
     
+    def run(self):
+        self.exec_()
+
     def read_data(self, fd):
         format = self.instrument.packet_format
         while True:
@@ -56,7 +59,7 @@ class SerialConnection(Connection):
     TAG = "[SerialConnection]"
     
     # Serial Constants
-    BUFFER_SIZE = {
+    BYTESIZE = {
                     5: serial.FIVEBITS,
                     6: serial.SIXBITS,
                     7: serial.SEVENBITS,
@@ -80,7 +83,6 @@ class SerialConnection(Connection):
             self.input.close()
 
     def begin(self,  instrument):
-        Connection.begin(instrument)
         try:
             self.input = serial.Serial()
             self.input.port = instrument.connection.port
@@ -90,20 +92,19 @@ class SerialConnection(Connection):
             self.input.stopbits = self.STOPBITS[instrument.connection.stop_bits]
             self.input.timeout = 0 # non-blocking mode (return immediately on read)
             self.input.open()
-            print self.TAG, "Configured:", self.input
-        except SerialError:
+        except serial.SerialException:
             print self.TAG,  "Device can not be found or can not be configured"
             self.quit()
-        else:
-            self.start()
+        
+        Connection.begin(self, instrument)
     
     def run(self):
-        Connection.run(self)
-        
         # TODO: initialization of instrument if needed
         
         notifier = QSocketNotifier(self.input.fileno(), QSocketNotifier.Read)
         notifier.activated.connect(self.read_data)
+        
+        Connection.run(self)
 
 
 class FileConnection(Connection):
@@ -116,15 +117,15 @@ class FileConnection(Connection):
             self.input.close()
 
     def begin(self,  instrument, file_name):
-        Connection.begin(self, instrument)
         try:
             self.input = open(file_name,  'rb')
         except IOError:
             print self.TAG, "The file does not exist, exiting gracefully"
             self.quit()
-        else:
-            self.start()
+        
+        Connection.begin(self, instrument)
     
     def run(self):
-        Connection.run(self)
         self.read_data(self.input.fileno())
+        
+        Connection.run(self)
