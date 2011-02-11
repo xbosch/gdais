@@ -1,4 +1,4 @@
-from PyQt4.QtCore import pyqtSignal, QCoreApplication, QString
+from PyQt4.QtCore import pyqtSignal, QCoreApplication, QString, QThread
 
 import signal, sys
 
@@ -43,5 +43,9 @@ if __name__ == "__main__":
     
     signal.signal(signal.SIGINT, signal_handler)
 #    quit_signal.connect(app.quit)
+    
+    self.timer = QTimer()
+    self.timer.timeout.connect(app.quit)
+    self.timer.start(5000)
     
     sys.exit(app.exec_())
