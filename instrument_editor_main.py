@@ -1,9 +1,9 @@
 from PyQt4 import QtCore, QtGui
-from ui.mainwindow import MainWindow
+from ui.instrumenteditor_mainwindow import InstrumentEditorMainWindow
 
 if __name__ == "__main__":
     import sys
     app = QtGui.QApplication(sys.argv)
-    ui = MainWindow()
+    ui = InstrumentEditorMainWindow()
     ui.show()
     sys.exit(app.exec_())

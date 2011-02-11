@@ -8,8 +8,8 @@ from PyQt4.QtGui import QFileDialog, QInputDialog, QLineEdit, QListWidgetItem, Q
 from PyQt4.QtCore import pyqtSignature, QString, Qt
 
 from Ui_instrumenteditor_mainwindow import Ui_InstrumentEditorMainWindow
-from instrument.instrument import Field, Instrument
-from instrument.instrument import PacketAlreadyExistsError, WrongPacketTypeError
+from instrument import Field, Instrument
+from instrument import PacketAlreadyExistsError, WrongPacketTypeError
 
 class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
     """
@@ -22,7 +22,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
         # TODO: temporally load always an instrument
-        self.load_instrument(Instrument("/home/pau/feina/UPC/projecte/code/InstrumentEditor/tmp/gps.json"))
+        self.load_instrument(Instrument("/home/pau/feina/UPC/projecte/code/GDAIS/conf/instruments/gps.json"))
         #self.load_instrument(Instrument())
     
     @pyqtSignature("")
@@ -41,7 +41,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
                                             None,
                                             self.trUtf8("Select an instrument description file"),
                                             #QString(os.getcwd()), # TODO: change to not fixed path
-                                            QString("/home/pau/feina/UPC/projecte/code/InstrumentEditor/tmp/"),
+                                            QString("/home/pau/feina/UPC/projecte/code/GDAIS/conf/instruments/"),
                                             self.trUtf8("*.json"),
                                             None)
         if filename:
@@ -58,7 +58,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
                                                 None,
                                                 self.trUtf8("Save instrument description file"),
                                                 #QString(os.getcwd()), # TODO: change to not fixed path
-                                                QString("/home/pau/feina/UPC/projecte/code/InstrumentEditor/tmp/"),
+                                                QString("/home/pau/feina/UPC/projecte/code/GDAIS/conf/instruments/"),
                                                 self.trUtf8("*.json"),
                                                 None)
         if filename:
@@ -74,7 +74,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
                                             None,
                                             self.trUtf8("Save instrument description file"),
                                             #QString(os.getcwd()), # TODO: change to not fixed path
-                                            QString("/home/pau/feina/UPC/projecte/code/InstrumentEditor/tmp/"),
+                                            QString("/home/pau/feina/UPC/projecte/code/GDAIS/conf/instruments/"),
                                             self.trUtf8("*.json"),
                                             None)
         if filename:
@@ -187,7 +187,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         if ok and text: # TODO: check correct packet number
             num = str(text)
             try:
-                self.instrument.add_packet(num, self.instrument.RX_PACKET)
+                self.instrument.add_packet(int(num), self.instrument.RX_PACKET)
             except PacketAlreadyExistsError:
                 QMessageBox.warning(None,
                     self.trUtf8("Packet already exists"),
@@ -206,7 +206,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         """
         num = str(self.rx_packets_list.currentItem().text())
         self.rx_packets_list.takeItem(self.rx_packets_list.currentRow())
-        self.instrument.delete_packet(num, self.instrument.RX_PACKET)
+        self.instrument.delete_packet(int(num), self.instrument.RX_PACKET)
     
     @pyqtSignature("QTreeWidgetItem*, QTreeWidgetItem*")
     def on_rx_packets_fields_currentItemChanged(self, current, previous):
@@ -224,7 +224,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         """
         Slot documentation goes here.
         """
-        item = QTreeWidgetItem(["EMPTY_FIELD", "empty"])
+        item = QTreeWidgetItem([Field.EMPTY_FIELD, "uint8"])
         item.setFlags(item.flags() | Qt.ItemIsEditable)
         self.rx_packets_fields.addTopLevelItem(item)
     
@@ -267,7 +267,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         if ok and text: # TODO: check correct packet number
             num = str(text)
             try:
-                self.instrument.add_packet(num, self.instrument.TX_PACKET)
+                self.instrument.add_packet(int(num), self.instrument.TX_PACKET)
             except PacketAlreadyExistsError:
                 QMessageBox.warning(None,
                     self.trUtf8("Packet already exists"),
@@ -286,7 +286,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         """
         num = str(self.tx_packets_list.currentItem().text())
         self.tx_packets_list.takeItem(self.tx_packets_list.currentRow())
-        self.instrument.delete_packet(num, self.instrument.TX_PACKET)
+        self.instrument.delete_packet(int(num), self.instrument.TX_PACKET)
     
     @pyqtSignature("QTreeWidgetItem*, QTreeWidgetItem*")
     def on_tx_packets_fields_currentItemChanged(self, current, previous):
@@ -304,7 +304,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         """
         Slot documentation goes here.
         """
-        item = QTreeWidgetItem(["EMPTY_FIELD", "empty"])
+        item = QTreeWidgetItem([Field.EMPTY_FIELD, "uint8"])
         item.setFlags(item.flags() | Qt.ItemIsEditable)
         self.tx_packets_fields.addTopLevelItem(item)
     
@@ -320,28 +320,29 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
 
     def load_packet(self, num, type):
         if type == self.instrument.RX_PACKET:
-            packet = self.instrument.rx_packets[num]
+            packet = self.instrument.rx_packets[int(num)]
             self.rx_packets_num.setText(num)
             self.rx_packets_name.setText(packet.name)
             for field in packet.fields:
                 item = QTreeWidgetItem([field.name, field.type])
                 item.setFlags(item.flags() | Qt.ItemIsEditable)
                 self.rx_packets_fields.addTopLevelItem(item)
+            
         elif type == self.instrument.TX_PACKET:
-            packet = self.instrument.tx_packets[num]
+            packet = self.instrument.tx_packets[int(num)]
             self.tx_packets_num.setText(num)
             self.tx_packets_name.setText(packet.name)
             for field in packet.fields:
                 item = QTreeWidgetItem([field.name, field.type])
                 item.setFlags(item.flags() | Qt.ItemIsEditable)
                 self.tx_packets_fields.addTopLevelItem(item)
-            pass
+            
         else:
             raise WrongPacketTypeError(type)
 
     def save_packet(self, num, type):
         if type == self.instrument.RX_PACKET:
-            packet = self.instrument.rx_packets[num]
+            packet = self.instrument.rx_packets[int(num)]
             packet.name = str(self.rx_packets_name.text())
             packet.fields = []
             for i in xrange(self.rx_packets_fields.topLevelItemCount()):
@@ -350,7 +351,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
                 packet.fields.append(field)
             
         elif type == self.instrument.TX_PACKET:
-            packet = self.instrument.tx_packets[num]
+            packet = self.instrument.tx_packets[int(num)]
             packet.name = str(self.tx_packets_name.text())
             packet.fields = []
             for i in xrange(self.tx_packets_fields.topLevelItemCount()):
@@ -378,22 +379,22 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         self.conn_stop_bits.setText(str(self.instrument.connection.stop_bits))
         
         for start_byte in self.instrument.packet_format.start_bytes:
-            item = QListWidgetItem(start_byte)
+            item = QListWidgetItem(hex(start_byte))
             item.setFlags(item.flags() | Qt.ItemIsEditable)
             self.pf_start_bytes.addItem(item)
         
         for end_byte in self.instrument.packet_format.end_bytes:
-            item = QListWidgetItem(end_byte)
+            item = QListWidgetItem(hex(end_byte))
             item.setFlags(item.flags() | Qt.ItemIsEditable)
             self.pf_end_bytes.addItem(item)
         
         for num in self.instrument.rx_packets:
-            self.rx_packets_list.addItem(num)
+            self.rx_packets_list.addItem(str(num))
         if self.rx_packets_list.count():
             self.rx_packets_list.setCurrentItem(self.rx_packets_list.item(0))
         
         for num in self.instrument.tx_packets:
-            self.tx_packets_list.addItem(num)
+            self.tx_packets_list.addItem(str(num))
         if self.tx_packets_list.count():
             self.tx_packets_list.setCurrentItem(self.tx_packets_list.item(0))
     
@@ -425,10 +426,10 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         
         self.instrument.packet_format.start_bytes = []
         for i in xrange(self.pf_start_bytes.count()):
-            self.instrument.packet_format.start_bytes.append(str(self.pf_start_bytes.item(i).text()))
+            self.instrument.packet_format.start_bytes.append(int(str(self.pf_start_bytes.item(i).text()), 0))
         self.instrument.packet_format.end_bytes = []
         for i in xrange(self.pf_end_bytes.count()):
-            self.instrument.packet_format.end_bytes.append(str(self.pf_end_bytes.item(i).text()))
+            self.instrument.packet_format.end_bytes.append(int(str(self.pf_end_bytes.item(i).text()), 0))
         
         if self.rx_packets_list.count():
             num = str(self.rx_packets_list.currentItem().text())

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/home/pau/feina/UPC/projecte/code/GDAIS/ui/instrumenteditor_mainwindow.ui'
 #
-# Created: Tue Feb  8 12:01:44 2011
+# Created: Tue Feb  8 12:21:34 2011
 #      by: PyQt4 UI code generator 4.7.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -362,7 +362,7 @@ class Ui_InstrumentEditorMainWindow(object):
         self.label_9.setBuddy(self.conn_stop_bits)
 
         self.retranslateUi(InstrumentEditorMainWindow)
-        self.tabWidget.setCurrentIndex(3)
+        self.tabWidget.setCurrentIndex(0)
         QtCore.QObject.connect(self.action_Quit, QtCore.SIGNAL("triggered()"), InstrumentEditorMainWindow.close)
         QtCore.QMetaObject.connectSlotsByName(InstrumentEditorMainWindow)
 
