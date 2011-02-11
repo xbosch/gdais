@@ -1,0 +1,64 @@
+{
+  "name": "Avió",
+  "instruments": {
+    "xsense": {
+      "filename": "MTi-G",
+      "init": {
+        "go_to_config": [],
+        "set_output_mode": [0, 62],
+        "set_output_settings": [0, 0, 8, 6],
+        "go_to_measure": []
+      },
+      "periodic_commands": [
+        {
+          "command": "req_data",
+          "params": [],
+          "period": 100
+        }
+      ]
+    },
+    "ariel": {
+      "filename": "ARIEL",
+      "init": {},
+      "periodic_commands": [
+        {
+          "command": "t_a",
+          "params": [],
+          "period": 200
+        }
+      ]
+    }
+  },
+  "command_sequences": {
+    "200": [
+      {
+        "instrument": "xsense",
+        "packet": "req_data",
+        "params": []
+      },
+      {
+        "wait": 10
+      },
+      {
+        "instrument": "ariel",
+        "packet": "t_a",
+        "params": []
+      },
+      {
+        "wait": 50
+      },
+      {
+        "instrument": "ariel",
+        "packet": "t_ext",
+        "params": []
+      }
+    ],
+    "30": [
+      {
+        "instrument": "xsense",
+        "packet": "req_data",
+        "params": []
+      }
+    ]
+  }
+}

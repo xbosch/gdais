@@ -4,6 +4,7 @@
 Module implementing the instrument model.
 """
 import json
+from numpy import dtype
 
 class Instrument(object):
     """
@@ -20,7 +21,14 @@ class Instrument(object):
             
             self.short_name = instr['short_name']
             self.name = instr['name']
+            
             self.byte_order = instr['byte_order']
+            if self.byte_order == "big-endian":
+                self.byte_order_char = ">"
+            elif self.byte_order == "little-endian":
+                self.byte_order_char = "<"
+            else:
+                self.byte_order_char = ""
             
             self.connection = Connection(instr['connection'])
             
@@ -28,11 +36,11 @@ class Instrument(object):
             
             self.rx_packets = {}
             for num, packet in instr['rx_packets'].iteritems():
-                self.rx_packets[num] = Packet(packet)
+                self.rx_packets[int(num)] = Packet(packet)
                 
             self.tx_packets = {}
             for num, packet in instr['tx_packets'].iteritems():
-                self.tx_packets[num] = Packet(packet)
+                self.tx_packets[int(num)] = Packet(packet)
         
         else:
             self.filename = ""
@@ -48,9 +56,9 @@ class Instrument(object):
     def add_packet(self, num, type):
         packet = Packet()
         if type == self.RX_PACKET and num not in self.rx_packets:
-            self.rx_packets[num] = packet
+            self.rx_packets[int(num)] = packet
         elif type == self.TX_PACKET and num not in self.tx_packets:
-            self.tx_packets[num] = packet
+            self.tx_packets[int(num)] = packet
         elif type != self.RX_PACKET and type != self.TX_PACKET:
             raise WrongPacketTypeError(type)
         else:
@@ -129,16 +137,16 @@ class PacketFormat(object):
     """
     def __init__(self,  packet_format=None):
         if packet_format:
-            self.start_bytes = [ hex(b) for b in packet_format['start_bytes'] ]
-            self.end_bytes = [ hex(b) for b in packet_format['end_bytes'] ]
+            self.start_bytes = packet_format['start_bytes']
+            self.end_bytes = packet_format['end_bytes']
         else:
             self.start_bytes = []
             self.end_bytes = []
     
     def dump(self):
         return {
-                    'start_bytes': map(int, self.start_bytes, [0]*len(self.start_bytes)), 
-                    'end_bytes': map(int, self.end_bytes, [0]*len(self.end_bytes))
+                    'start_bytes': self.start_bytes, 
+                    'end_bytes': self.end_bytes
                 }
 
 
@@ -165,11 +173,23 @@ class Packet(object):
                     'name': self.name, 
                     'fields': fields
                 }
+    
+    def struct_format(self):
+        return "".join(f.struct_format() for f in self.fields)
+    
+    def types(self):
+        types = []
+        for f in self.fields:
+            if f.name != Field.EMPTY_FIELD:
+                types.append(f.type_desc())
+        return types
 
 class Field(object):
     """
     Class documentation goes here.
     """
+    EMPTY_FIELD = "EMPTY_FIELD"
+    
     def __init__(self,  name,  type):
         self.name = name
         self.type = type
@@ -179,6 +199,16 @@ class Field(object):
                     'name': self.name,
                     'type': self.type
                 }
+    
+    def struct_format(self):
+        if self.name == self.EMPTY_FIELD:
+            return str(dtype(str(self.type)).itemsize) + 'x'
+        else:
+            return dtype(str(self.type)).char
+    
+    def type_desc(self):
+        return (str(self.name.lower().replace(' ','_')), str(self.type))
+
 
 class WrongPacketTypeError(Exception):
     """
