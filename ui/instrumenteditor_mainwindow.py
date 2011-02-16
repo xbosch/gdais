@@ -367,16 +367,27 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         
         self.instrument = instrument
         
+        # base info
         self.instrument_name.setText(self.instrument.name)
         self.instrument_short_name.setText(self.instrument.short_name)
         self.byte_order.setCurrentIndex(self.byte_order.findText(self.instrument.byte_order))
         
+        # connection
         self.conn_type.setCurrentIndex(self.conn_type.findText(self.instrument.connection.type))
         self.conn_port.setText(self.instrument.connection.port)
         self.conn_baudrate.setText(str(self.instrument.connection.baudrate))
         self.conn_data_bits.setText(str(self.instrument.connection.data_bits))
         self.conn_parity.setText(self.instrument.connection.parity)
         self.conn_stop_bits.setText(str(self.instrument.connection.stop_bits))
+        
+        # packet format
+        for i, field in enumerate(self.instrument.packet_format.rx_format):
+            combo_box = getattr(self, 'pf_rx_format_%d'% i)
+            combo_box.setCurrentIndex(combo_box.findText(field))
+        
+        for i, field in enumerate(self.instrument.packet_format.tx_format):
+            combo_box = getattr(self, 'pf_tx_format_%d'% i)
+            combo_box.setCurrentIndex(combo_box.findText(field))
         
         for start_byte in self.instrument.packet_format.start_bytes:
             item = QListWidgetItem(hex(start_byte))
@@ -388,21 +399,29 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
             item.setFlags(item.flags() | Qt.ItemIsEditable)
             self.pf_end_bytes.addItem(item)
         
+        # rx packets
         for num in self.instrument.rx_packets:
             self.rx_packets_list.addItem(str(num))
         if self.rx_packets_list.count():
             self.rx_packets_list.setCurrentItem(self.rx_packets_list.item(0))
         
+        # tx packets
         for num in self.instrument.tx_packets:
             self.tx_packets_list.addItem(str(num))
         if self.tx_packets_list.count():
             self.tx_packets_list.setCurrentItem(self.tx_packets_list.item(0))
     
     def clear_instrument(self):
+        none_index = 4 # TODO: improve
+        for i in range(4):
+            getattr(self, 'pf_rx_format_%d'% i).setCurrentIndex(none_index)
+            getattr(self, 'pf_tx_format_%d'% i).setCurrentIndex(none_index)
+        
         for byte in xrange(self.pf_start_bytes.count()):
             self.pf_start_bytes.takeItem(0)
         for byte in xrange(self.pf_end_bytes.count()):
             self.pf_end_bytes.takeItem(0)
+            
         for packet in xrange(self.rx_packets_list.count()):
             self.rx_packets_list.takeItem(0)
         self.rx_packets_name.setText("")
@@ -413,6 +432,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         self.tx_packets_num.setText("")
 
     def dump_instrument(self, filename):
+        # base info
         self.instrument.name = str(self.instrument_name.text())
         self.instrument.short_name = str(self.instrument_short_name.text())
         self.instrument.byte_order = str(self.byte_order.currentText())
@@ -424,18 +444,36 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         self.instrument.connection.parity = str(self.conn_parity.text())
         self.instrument.connection.stop_bits = int(self.conn_stop_bits.text())
         
+        # packet format
+        self.instrument.packet_format.rx_format = []
+        for i in range(4):
+            combo_box = getattr(self, 'pf_rx_format_%d'% i)
+            field = str(combo_box.currentText())
+            if field != self.instrument.packet_format.FORMAT_EMPTY:
+                self.instrument.packet_format.rx_format.append(field)
+        
+        self.instrument.packet_format.tx_format = []
+        for i in range(4):
+            combo_box = getattr(self, 'pf_tx_format_%d'% i)
+            field = str(combo_box.currentText())
+            if field != self.instrument.packet_format.FORMAT_EMPTY:
+                self.instrument.packet_format.tx_format.append(field)
+        
         self.instrument.packet_format.start_bytes = []
         for i in xrange(self.pf_start_bytes.count()):
             self.instrument.packet_format.start_bytes.append(int(str(self.pf_start_bytes.item(i).text()), 0))
+        
         self.instrument.packet_format.end_bytes = []
         for i in xrange(self.pf_end_bytes.count()):
             self.instrument.packet_format.end_bytes.append(int(str(self.pf_end_bytes.item(i).text()), 0))
         
+        # rx packets
         if self.rx_packets_list.count():
             num = str(self.rx_packets_list.currentItem().text())
             self.save_packet(num, self.instrument.RX_PACKET)
             self.load_packet(num, self.instrument.RX_PACKET) # TODO: needed to reload the packet into the interface
 
+        # tx packets
         if self.tx_packets_list.count():
             num = str(self.tx_packets_list.currentItem().text())
             self.save_packet(num, self.instrument.TX_PACKET)

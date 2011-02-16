@@ -1,10 +1,10 @@
-from PyQt4.QtCore import pyqtSignal, QSocketNotifier, QThread
+from PyQt4.QtCore import pyqtSignal, QSocketNotifier, QThread, QTimer
 import serial
 
 
 class Connection(QThread):
     
-    BUFFER_SIZE = 8
+    DEFAULT_BUFFER_SIZE = 8
     
     # Signal for new data packet received event
     new_data_received = pyqtSignal(bytearray)
@@ -17,6 +17,15 @@ class Connection(QThread):
         self.packet = bytearray('')
         self.old_data = None
         print self.TAG, "Connected:", self.input
+        
+        format = self.instrument.packet_format
+        if format.FORMAT_END_BYTES in format.rx_format:
+            self.buffer_size = self.DEFAULT_BUFFER_SIZE
+        else:
+            # suppose all packets of the same length as there's no end mark
+            packet = instrument.rx_packets.values()[0]
+            self.buffer_size = packet.struct.size # struct added by parser
+        
         self.start()
     
     def run(self):
@@ -25,14 +34,14 @@ class Connection(QThread):
     def read_data(self, fd):
         format = self.instrument.packet_format
         while True:
-            data = self.input.read(self.BUFFER_SIZE)
+            data = self.input.read(self.buffer_size)
             if not data:
                 break
             
             if not self.packet:
                 if self.old_data:
                     data = self.old_data + data
-                if format.start_bytes:
+                if format.FORMAT_START_BYTES in format.rx_format:
                     for i in xrange(len(data) - len(format.start_bytes) + 1):
                         if data[i:i + len(format.start_bytes)] == bytearray(format.start_bytes):
                             self.packet += data[len(format.start_bytes) + i:]
@@ -42,7 +51,7 @@ class Connection(QThread):
             else:
                 self.packet += data
             
-            if format.end_bytes:
+            if format.FORMAT_END_BYTES in format.rx_format:
                 for i in xrange(len(data) - len(format.end_bytes) + 1):
                     if data[-i - len(format.end_bytes):-i] == bytearray(format.end_bytes):
                         self.new_data_received.emit(self.packet[:-i - len(format.end_bytes)])
@@ -50,8 +59,10 @@ class Connection(QThread):
                         self.packet = bytearray('')
                         break
             else:
-                self.new_data.emit(self.packet)
-                self.packet = bytearray('')
+                if len(self.packet) >= self.buffer_size:
+                    self.new_data_received.emit(self.packet[:self.buffer_size])
+                    self.old_data = self.packet[self.buffer_size:]
+                    self.packet = bytearray('')
     
 
 class SerialConnection(Connection):
@@ -77,6 +88,13 @@ class SerialConnection(Connection):
                     2: serial.STOPBITS_TWO
                 }
     
+    # TODO: TMP #
+    def __init__(self, parent = None):
+        Connection.__init__(self,  parent)
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.on_timeout)
+    # END TMP #
+    
     def __del__(self):
         if self.input:
             print self.TAG, "Closing serial port"
@@ -94,7 +112,7 @@ class SerialConnection(Connection):
             self.input.open()
         except serial.SerialException:
             print self.TAG,  "Device can not be found or can not be configured"
-            self.quit()
+            raise
         
         Connection.begin(self, instrument)
     
@@ -104,7 +122,16 @@ class SerialConnection(Connection):
         notifier = QSocketNotifier(self.input.fileno(), QSocketNotifier.Read)
         notifier.activated.connect(self.read_data)
         
+        # TODO: TMP #
+        self.timer.start(1000)
+        # END TMP #
+        
         Connection.run(self)
+    
+    # TODO: TMP #
+    def on_timeout(self):
+        self.input.write('\x11')
+    # END TMP #
 
 
 class FileConnection(Connection):

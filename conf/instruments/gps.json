@@ -11,6 +11,18 @@
   },
   "byte_order": "big-endian",
   "packet_format": {
+    "rx_format": [
+      "Start bytes",
+      "Packet num",
+      "Packet fields",
+      "End bytes"
+    ],
+    "tx_format": [
+      "Start bytes",
+      "Packet num",
+      "Packet fields",
+      "End bytes"
+    ],
     "start_bytes": [
       16
     ], 

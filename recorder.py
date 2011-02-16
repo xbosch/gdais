@@ -34,3 +34,4 @@ class Recorder(QThread):
     def on_new_packet(self,  packet):
         if packet.data:
             packet.instrument_packet.table.append([packet.data + (time(), )])
+            packet.instrument_packet.table.flush()
