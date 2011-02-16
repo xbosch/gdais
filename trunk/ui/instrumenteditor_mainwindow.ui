@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>506</width>
-    <height>600</height>
+    <width>542</width>
+    <height>648</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -92,7 +92,7 @@
        <string/>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="connection">
        <attribute name="title">
@@ -222,111 +222,420 @@
        <attribute name="title">
         <string>Packet Format</string>
        </attribute>
-       <layout class="QHBoxLayout" name="horizontalLayout_4">
+       <layout class="QVBoxLayout" name="verticalLayout_8">
         <item>
-         <layout class="QVBoxLayout" name="verticalLayout_2">
+         <widget class="QLabel" name="label_11">
+          <property name="text">
+           <string>rx packets format:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
           <item>
-           <widget class="QLabel" name="label_16">
-            <property name="text">
-             <string>Start bytes</string>
-            </property>
+           <widget class="QComboBox" name="pf_rx_format_0">
+            <item>
+             <property name="text">
+              <string>Start bytes</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Packet num</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Packet fields</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>End bytes</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>none</string>
+             </property>
+            </item>
            </widget>
           </item>
           <item>
-           <widget class="QListWidget" name="pf_start_bytes"/>
+           <widget class="QComboBox" name="pf_rx_format_1">
+            <property name="currentIndex">
+             <number>1</number>
+            </property>
+            <item>
+             <property name="text">
+              <string>Start bytes</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Packet num</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Packet fields</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>End bytes</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>none</string>
+             </property>
+            </item>
+           </widget>
           </item>
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_3">
+           <widget class="QComboBox" name="pf_rx_format_2">
+            <property name="currentIndex">
+             <number>2</number>
+            </property>
             <item>
-             <widget class="QPushButton" name="pf_add_start_byte">
-              <property name="text">
-               <string>Add new...</string>
-              </property>
-             </widget>
+             <property name="text">
+              <string>Start bytes</string>
+             </property>
             </item>
             <item>
-             <spacer name="horizontalSpacer_5">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
+             <property name="text">
+              <string>Packet num</string>
+             </property>
             </item>
             <item>
-             <widget class="QPushButton" name="pf_delete_start_byte">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="text">
-               <string>Delete</string>
-              </property>
-             </widget>
+             <property name="text">
+              <string>Packet fields</string>
+             </property>
             </item>
-           </layout>
+            <item>
+             <property name="text">
+              <string>End bytes</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>none</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="pf_rx_format_3">
+            <property name="currentIndex">
+             <number>3</number>
+            </property>
+            <item>
+             <property name="text">
+              <string>Start bytes</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Packet num</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Packet fields</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>End bytes</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>none</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_15">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
           </item>
          </layout>
         </item>
         <item>
-         <spacer name="horizontalSpacer_4">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
+         <widget class="QLabel" name="label_14">
+          <property name="text">
+           <string>tx packets format:</string>
           </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>97</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
+         </widget>
         </item>
         <item>
-         <layout class="QVBoxLayout" name="verticalLayout_3">
+         <layout class="QHBoxLayout" name="horizontalLayout_16">
           <item>
-           <widget class="QLabel" name="label_17">
-            <property name="text">
-             <string>End bytes</string>
-            </property>
+           <widget class="QComboBox" name="pf_tx_format_0">
+            <item>
+             <property name="text">
+              <string>Start bytes</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Packet num</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Packet fields</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>End bytes</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>none</string>
+             </property>
+            </item>
            </widget>
           </item>
           <item>
-           <widget class="QListWidget" name="pf_end_bytes"/>
+           <widget class="QComboBox" name="pf_tx_format_1">
+            <property name="currentIndex">
+             <number>1</number>
+            </property>
+            <item>
+             <property name="text">
+              <string>Start bytes</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Packet num</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Packet fields</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>End bytes</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>none</string>
+             </property>
+            </item>
+           </widget>
           </item>
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <widget class="QComboBox" name="pf_tx_format_2">
+            <property name="currentIndex">
+             <number>2</number>
+            </property>
             <item>
-             <widget class="QPushButton" name="pf_add_end_byte">
+             <property name="text">
+              <string>Start bytes</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Packet num</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Packet fields</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>End bytes</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>none</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="pf_tx_format_3">
+            <property name="currentIndex">
+             <number>3</number>
+            </property>
+            <item>
+             <property name="text">
+              <string>Start bytes</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Packet num</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Packet fields</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>End bytes</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>none</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_16">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="Line" name="line_5">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_15">
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_2">
+            <item>
+             <widget class="QLabel" name="label_16">
               <property name="text">
-               <string>Add new...</string>
+               <string>Start bytes</string>
               </property>
              </widget>
             </item>
             <item>
-             <spacer name="horizontalSpacer_6">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
+             <widget class="QListWidget" name="pf_start_bytes"/>
             </item>
             <item>
-             <widget class="QPushButton" name="pf_delete_end_byte">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <item>
+               <widget class="QPushButton" name="pf_add_start_byte">
+                <property name="text">
+                 <string>Add new...</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_5">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pf_delete_start_byte">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="text">
+                 <string>Delete</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_4">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>47</width>
+              <height>50</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_3">
+            <item>
+             <widget class="QLabel" name="label_17">
               <property name="text">
-               <string>Delete</string>
+               <string>End bytes</string>
               </property>
              </widget>
+            </item>
+            <item>
+             <widget class="QListWidget" name="pf_end_bytes"/>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_2">
+              <item>
+               <widget class="QPushButton" name="pf_add_end_byte">
+                <property name="text">
+                 <string>Add new...</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_6">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pf_delete_end_byte">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="text">
+                 <string>Delete</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
            </layout>
           </item>
@@ -768,7 +1077,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>506</width>
+     <width>542</width>
      <height>23</height>
     </rect>
    </property>

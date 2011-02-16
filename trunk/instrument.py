@@ -135,16 +135,34 @@ class PacketFormat(object):
     """
     Class documentation goes here.
     """
+    FORMAT_EMPTY = 'none'
+    FORMAT_START_BYTES = 'Start bytes'
+    FORMAT_PACKET_NUM = 'Packet num'
+    FORMAT_PACKET_FIELDS = 'Packet fields'
+    FORMAT_END_BYTES = 'End bytes'
+    FORMAT_FIELDS = [
+                    FORMAT_START_BYTES, 
+                    FORMAT_PACKET_NUM, 
+                    FORMAT_PACKET_FIELDS, 
+                    FORMAT_END_BYTES
+                ]
+    
     def __init__(self,  packet_format=None):
         if packet_format:
+            self.rx_format = packet_format['rx_format']
+            self.tx_format = packet_format['tx_format']
             self.start_bytes = packet_format['start_bytes']
             self.end_bytes = packet_format['end_bytes']
         else:
+            self.rx_format = []
+            self.tx_format = []
             self.start_bytes = []
             self.end_bytes = []
     
     def dump(self):
         return {
+                    'rx_format': self.rx_format, 
+                    'tx_format': self.tx_format, 
                     'start_bytes': self.start_bytes, 
                     'end_bytes': self.end_bytes
                 }
