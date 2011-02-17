@@ -13,45 +13,50 @@ class Instrument(object):
     RX_PACKET = "rx"
     TX_PACKET = "tx"
     
-    def __init__(self,  filename=None):
-        if filename:
-            self.filename = filename
-            with open(self.filename, "r") as fp:
-                instr = json.load(fp)
-            
-            self.short_name = instr['short_name']
-            self.name = instr['name']
-            
-            self.byte_order = instr['byte_order']
-            if self.byte_order == "big-endian":
-                self.byte_order_char = ">"
-            elif self.byte_order == "little-endian":
-                self.byte_order_char = "<"
-            else:
-                self.byte_order_char = ""
-            
-            self.connection = Connection(instr['connection'])
-            
-            self.packet_format = PacketFormat(instr['packet_format'])
-            
-            self.rx_packets = {}
-            for num, packet in instr['rx_packets'].iteritems():
-                self.rx_packets[int(num)] = Packet(packet)
-                
-            self.tx_packets = {}
-            for num, packet in instr['tx_packets'].iteritems():
-                self.tx_packets[int(num)] = Packet(packet)
+    BYTE_ORDER_CHAR = {
+                        'big-endian': '>', 
+                        'little-endian': '<'
+                    }
+    
+    def __init__(self):
+        self.filename = ""
+        self.short_name = "new_instrument"
+        self.name = "New Instrument"
+        self.byte_order = "big-endian"
         
-        else:
-            self.filename = ""
-            self.short_name = "new_instrument"
-            self.name = "New Instrument"
-            self.byte_order = "big-endian"
+        self.connection = Connection()
+        self.packet_format = PacketFormat()
+        self.rx_packets  = {}
+        self.tx_packets = {}
+    
+    def __init__(self,  filename):
+        self.filename = filename
+        with open(self.filename, "r") as fp:
+            instr = json.load(fp)
+        
+        self.short_name = instr['short_name']
+        self.name = instr['name']
+        self.byte_order = instr['byte_order']
+        
+        self.connection = Connection(instr['connection'])
+        
+        self.packet_format = PacketFormat(instr['packet_format'])
+        
+        self.rx_packets = {}
+        for num, packet in instr['rx_packets'].iteritems():
+            self.rx_packets[int(num)] = Packet(packet)
             
-            self.connection = Connection()
-            self.packet_format = PacketFormat()
-            self.rx_packets  = {}
-            self.tx_packets = {}
+        self.tx_packets = {}
+        for num, packet in instr['tx_packets'].iteritems():
+            self.tx_packets[int(num)] = Packet(packet)
+    
+    def get_byte_order_char(self):
+        if self.byte_order in self.BYTE_ORDER_CHAR:
+            return self.BYTE_ORDER_CHAR[self.byte_order]
+        else:
+            return ''
+    
+    byte_order_char = property(get_byte_order_char)
     
     def add_packet(self, num, type):
         packet = Packet()

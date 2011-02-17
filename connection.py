@@ -4,6 +4,8 @@ import serial
 
 class Connection(QThread):
     
+    TAG = "[Connection]"
+    
     DEFAULT_BUFFER_SIZE = 8
     
     # Signal for new data packet received event
