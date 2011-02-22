@@ -78,49 +78,67 @@ class InstrumentConfig(object):
         raise NotImplementedError
     
     def __init__(self,  instr):
-        if type(instr) is type(''):
+        if type(instr) is type(''): # str
             self.instrument = Instrument(instr)
             self.init_commands = []
             self.periodic_commands = []
         
-        elif type(instr) is type({}):
+        elif type(instr) is type({}): # dict
             self.instrument = Instrument(instr['filename'])
             
             self.init_commands = []
             if 'init_commands' in instr:
                 for c in instr['init_commands']:
-                    cmd = Command(c)
-                    try:
-                        packet = self.instrument.tx_packets[cmd.id]
-                    except KeyError:
-                        print self.TAG, "Command %s not in instrument %s tx packets" % (cmd.id, self.instrument.name)
-                    else:
-                        cmd.fields = packet.fields
-                        #cmd.name = packet.name
-                        self.init_commands.append(cmd)
+                    self.add_init_command(c)
             
             self.periodic_commands = []
             if 'periodic_commands' in instr:
                 for c in instr['periodic_commands']:
-                    cmd = PeriodicCommand(c)
-                    try:
-                        packet = self.instrument.tx_packets[cmd.id]
-                    except KeyError:
-                        print self.TAG, "Command %s not in instrument %s tx packets" % (cmd.id, self.instrument.name)
-                    else:
-                        cmd.fields = packet.fields
-                        #cmd.name = packet.name
-                        self.periodic_commands.append(cmd)
+                    self.add_periodic_command(c)
+        
+        else:
+            print TAG, "Unknown parameter type, can't initialize InstrumentConfig"
+    
+    def add_init_command(self, c):
+        cmd = Command(c)
+        if (self._load_command_info(cmd)):
+            self.init_commands.append(cmd)
+    
+    def delete_init_command(self, num):
+        cmd = self._get_command(self.init_commands, num)
+        self.init_commands.remove(cmd)
     
     def get_init_command(self, num):
-        for cmd in self.init_commands:
-            if cmd.id == num:
-                return cmd
-        return None
+        return self._get_command(self.init_commands, num)
+    
+    def add_periodic_command(self, c):
+        cmd = PeriodicCommand(c)
+        if (self._load_command_info(cmd)):
+            self.periodic_commands.append(cmd)
+    
+    def delete_periodic_command(self, num):
+        cmd = self._get_command(self.periodic_commands, num)
+        self.periodic_commands.remove(cmd)
     
     def get_periodic_command(self, num):
-        for cmd in self.periodic_commands:
-            if cmd.id == num:
+        return self._get_command(self.periodic_commands, num)
+    
+    def _load_command_info(self, cmd):
+        try:
+            packet = self.instrument.tx_packets[cmd.id]
+        except KeyError:
+            print self.TAG, "Command %s not in instrument %s tx packets" % (cmd.id, self.instrument.name)
+            return False
+        else:
+            cmd.name = packet.name
+            cmd.fields = packet.fields
+            if not cmd.values: # TODO: values initialization, best solution?
+                cmd.values = [0] * len(cmd.fields)
+            return True
+    
+    def _get_command(self, commands, id):
+        for cmd in commands:
+            if cmd.id == id:
                 return cmd
         return None
     
@@ -138,9 +156,14 @@ class Command(object):
     """
     
     def __init__(self,  cmd):
-        self.id = cmd['id']
-        self.name = cmd['name']
-        self.values = cmd['values']
+        self.name = ''
+        if type(cmd) is type(0): # int
+            self.id = cmd
+            self.values = []
+        
+        elif type(cmd) is type({}): #dict
+            self.id = cmd['id']
+            self.values = cmd['values']
     
     def dump(self):
         return {
@@ -154,10 +177,16 @@ class PeriodicCommand(Command):
     """
     Class documentation goes here.
     """
+    DEFAULT_PERIOD = 1000
     
     def __init__(self,  periodic_command):
-        Command.__init__(self, periodic_command['command'])
-        self.period = periodic_command['period']
+        if type(periodic_command) is type(0): # int
+            Command.__init__(self, periodic_command)
+            self.period = self.DEFAULT_PERIOD
+        
+        elif type(periodic_command) is type({}): #dict
+            Command.__init__(self, periodic_command['command'])
+            self.period = periodic_command['period']
     
     def dump(self):
         return {

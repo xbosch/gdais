@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/home/pau/feina/UPC/projecte/code/GDAIS/ui/instrumenteditor_mainwindow.ui'
 #
-# Created: Tue Feb 22 00:46:25 2011
+# Created: Tue Feb 22 10:46:00 2011
 #      by: PyQt4 UI code generator 4.7.3
 #
 # WARNING! All changes made in this file will be lost!

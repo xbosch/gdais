@@ -4,7 +4,7 @@
 Module implementing EquipmentEditorMainWindow.
 """
 
-from PyQt4.QtGui import QFileDialog, QListWidgetItem, QMainWindow,  QMessageBox, QTreeWidgetItem
+from PyQt4.QtGui import QFileDialog, QInputDialog, QListWidgetItem, QMainWindow,  QMessageBox, QTreeWidgetItem
 from PyQt4.QtCore import pyqtSignature, QString, Qt
 
 from Ui_equipmenteditor_mainwindow import Ui_EquipmentEditorMainWindow
@@ -35,7 +35,7 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
         """
         # TODO: not implemented yet
         raise NotImplementedError
-#        self.load_instrument(Instrument())
+#        self.load_equipment(Equipment())
     
     @pyqtSignature("")
     def on_action_Open_triggered(self):
@@ -146,13 +146,46 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
         """
         if previous:
             self.save_init_command(str(previous.text()))
-#        else:
-#            self.init_commands_delete.setEnabled(True)
+        else:
+            self.init_commands_delete.setEnabled(True)
         
         if current:
             self.load_init_command(str(current.text()))
-#        else:
-#            self.init_commands_delete.setEnabled(False)
+        else:
+            self.init_commands_delete.setEnabled(False)
+    
+    @pyqtSignature("")
+    def on_init_commands_add_clicked(self):
+        """
+        Slot documentation goes here.
+        """
+        tx_packets = {}
+        for num, packet in self.instr_cfg.instrument.tx_packets.iteritems():
+            tx_packets[packet.name] = num
+        
+        (text, ok) = QInputDialog.getItem(\
+            self,
+            self.trUtf8("Add init command"),
+            self.trUtf8("Select command to send:"),
+            tx_packets.keys(),
+            0, False)
+        
+        if ok and text:
+            cmd_num = tx_packets[str(text)]
+            self.instr_cfg.add_init_command(cmd_num)
+            item = QListWidgetItem(str(cmd_num))
+            self.init_commands_list.addItem(item)
+            self.init_commands_list.setCurrentItem(item)
+
+    
+    @pyqtSignature("")
+    def on_init_commands_delete_clicked(self):
+        """
+        Slot documentation goes here.
+        """
+        cmd_num = int(self.init_commands_list.currentItem().text())
+        self.init_commands_list.takeItem(self.init_commands_list.currentRow())
+        self.instr_cfg.delete_init_command(cmd_num)
 
     @pyqtSignature("QListWidgetItem*, QListWidgetItem*")
     def on_periodic_commands_list_currentItemChanged(self, current, previous):
@@ -161,13 +194,46 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
         """
         if previous:
             self.save_periodic_command(str(previous.text()))
-#        else:
-#            self.periodic_commands_delete.setEnabled(True)
+        else:
+            self.periodic_commands_delete.setEnabled(True)
         
         if current:
             self.load_periodic_command(str(current.text()))
-#        else:
-#            self.periodic_commands_delete.setEnabled(False)
+        else:
+            self.periodic_commands_delete.setEnabled(False)
+    
+    @pyqtSignature("")
+    def on_periodic_commands_add_clicked(self):
+        """
+        Slot documentation goes here.
+        """
+        tx_packets = {}
+        for num, packet in self.instr_cfg.instrument.tx_packets.iteritems():
+            tx_packets[packet.name] = num
+        
+        (text, ok) = QInputDialog.getItem(\
+            self,
+            self.trUtf8("Add periodic command"),
+            self.trUtf8("Select command to send:"),
+            tx_packets.keys(),
+            0, False)
+        
+        if ok and text:
+            cmd_num = tx_packets[str(text)]
+            self.instr_cfg.add_periodic_command(cmd_num)
+            item = QListWidgetItem(str(cmd_num))
+            self.periodic_commands_list.addItem(item)
+            self.periodic_commands_list.setCurrentItem(item)
+
+    
+    @pyqtSignature("")
+    def on_periodic_commands_delete_clicked(self):
+        """
+        Slot documentation goes here.
+        """
+        cmd_num = int(self.periodic_commands_list.currentItem().text())
+        self.periodic_commands_list.takeItem(self.periodic_commands_list.currentRow())
+        self.instr_cfg.delete_periodic_command(cmd_num)
     
     def load_instrument(self, short_name):
         self.clear_instrument()
@@ -275,7 +341,7 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
         
         if self.instruments_list.count():
             short_name = str(self.instruments_list.currentItem().text())
-            self.save_instrument(short_name)
+            self.save_instrument()
             self.load_instrument(short_name) # TODO: needed to reload the instrument into the interface
         
         self.equipment.to_file(filename)
