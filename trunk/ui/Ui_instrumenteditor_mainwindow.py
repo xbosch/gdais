@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/home/pau/feina/UPC/projecte/code/GDAIS/ui/instrumenteditor_mainwindow.ui'
 #
-# Created: Wed Feb 16 12:13:45 2011
+# Created: Tue Feb 22 00:46:25 2011
 #      by: PyQt4 UI code generator 4.7.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -450,7 +450,7 @@ class Ui_InstrumentEditorMainWindow(object):
         self.label_9.setBuddy(self.conn_stop_bits)
 
         self.retranslateUi(InstrumentEditorMainWindow)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
         self.pf_rx_format_1.setCurrentIndex(1)
         self.pf_rx_format_2.setCurrentIndex(2)
         self.pf_rx_format_3.setCurrentIndex(3)

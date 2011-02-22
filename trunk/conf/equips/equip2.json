@@ -1,0 +1,38 @@
+{
+  "name": "Equip de test",
+  "short_name": "equip2",
+  "instruments": [
+    {
+      "filename": "conf/instruments/compass_f350.json",
+      "init_commands": [
+          {
+            "name": "Request Compass Measure",
+            "id": 17,
+            "values": []
+          }
+        ],
+      "periodic_commands": [
+        {
+          "command": 
+            {
+              "name": "Request Compass Measure",
+              "id": 17,
+              "values": []
+            },
+          "period": 1000
+        }
+      ]
+    },
+    {
+      "filename": "conf/instruments/gps.json",
+      "init_commands": [
+          {
+            "name": "Request Current Satellite Tracking Status",
+            "id": 60,
+            "values": [0]
+          }
+        ],
+      "periodic_commands": []
+    }
+  ]
+}

@@ -15,6 +15,9 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
     """
     Class documentation goes here.
     """
+    CONF_PATH = 'conf/'
+    INSTRUMENT_PATH = CONF_PATH + 'instruments/'
+    
     def __init__(self, parent = None):
         """
         Constructor
@@ -22,7 +25,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
         # TODO: temporally load always an instrument
-        self.load_instrument(Instrument("/home/pau/feina/UPC/projecte/code/GDAIS/conf/instruments/gps.json"))
+        self.load_instrument(Instrument(self.INSTRUMENT_PATH + "gps.json"))
         #self.load_instrument(Instrument())
     
     @pyqtSignature("")
@@ -40,8 +43,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         filename = QFileDialog.getOpenFileName(
                                             None,
                                             self.trUtf8("Select an instrument description file"),
-                                            #QString(os.getcwd()), # TODO: change to not fixed path
-                                            QString("/home/pau/feina/UPC/projecte/code/GDAIS/conf/instruments/"),
+                                            QString(self.INSTRUMENT_PATH),
                                             self.trUtf8("*.json"),
                                             None)
         if filename:
@@ -57,8 +59,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
             filename = QFileDialog.getOpenFileName(
                                                 None,
                                                 self.trUtf8("Save instrument description file"),
-                                                #QString(os.getcwd()), # TODO: change to not fixed path
-                                                QString("/home/pau/feina/UPC/projecte/code/GDAIS/conf/instruments/"),
+                                                QString(self.INSTRUMENT_PATH),
                                                 self.trUtf8("*.json"),
                                                 None)
         if filename:
@@ -73,8 +74,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         filename = QFileDialog.getOpenFileName(
                                             None,
                                             self.trUtf8("Save instrument description file"),
-                                            #QString(os.getcwd()), # TODO: change to not fixed path
-                                            QString("/home/pau/feina/UPC/projecte/code/GDAIS/conf/instruments/"),
+                                            QString(self.INSTRUMENT_PATH),
                                             self.trUtf8("*.json"),
                                             None)
         if filename:
