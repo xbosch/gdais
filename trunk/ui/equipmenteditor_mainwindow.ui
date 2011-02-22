@@ -223,9 +223,6 @@
                <layout class="QHBoxLayout" name="horizontalLayout_13">
                 <item>
                  <widget class="QPushButton" name="init_commands_add">
-                  <property name="enabled">
-                   <bool>false</bool>
-                  </property>
                   <property name="text">
                    <string>+</string>
                   </property>
@@ -369,9 +366,6 @@
                <layout class="QHBoxLayout" name="horizontalLayout_14">
                 <item>
                  <widget class="QPushButton" name="periodic_commands_add">
-                  <property name="enabled">
-                   <bool>false</bool>
-                  </property>
                   <property name="text">
                    <string>+</string>
                   </property>

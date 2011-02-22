@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/home/pau/feina/UPC/projecte/code/GDAIS/ui/equipmenteditor_mainwindow.ui'
 #
-# Created: Tue Feb 22 00:46:29 2011
+# Created: Tue Feb 22 10:46:01 2011
 #      by: PyQt4 UI code generator 4.7.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -110,7 +110,6 @@ class Ui_EquipmentEditorMainWindow(object):
         self.horizontalLayout_13 = QtGui.QHBoxLayout()
         self.horizontalLayout_13.setObjectName("horizontalLayout_13")
         self.init_commands_add = QtGui.QPushButton(self.instruments)
-        self.init_commands_add.setEnabled(False)
         self.init_commands_add.setObjectName("init_commands_add")
         self.horizontalLayout_13.addWidget(self.init_commands_add)
         spacerItem4 = QtGui.QSpacerItem(20, 20, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
@@ -167,7 +166,6 @@ class Ui_EquipmentEditorMainWindow(object):
         self.horizontalLayout_14 = QtGui.QHBoxLayout()
         self.horizontalLayout_14.setObjectName("horizontalLayout_14")
         self.periodic_commands_add = QtGui.QPushButton(self.instruments)
-        self.periodic_commands_add.setEnabled(False)
         self.periodic_commands_add.setObjectName("periodic_commands_add")
         self.horizontalLayout_14.addWidget(self.periodic_commands_add)
         spacerItem7 = QtGui.QSpacerItem(20, 20, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
