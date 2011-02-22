@@ -25,8 +25,8 @@ if __name__ == "__main__":
     
     app = QCoreApplication(sys.argv)
     
-    instrument = Instrument("/home/pau/feina/UPC/projecte/code/GDAIS/conf/instruments/gps.json")
-#    instrument = Instrument("/home/pau/feina/UPC/projecte/code/GDAIS/conf/instruments/compass_f350.json")
+    instrument = Instrument("conf/instruments/gps.json")
+#    instrument = Instrument("conf/instruments/compass_f350.json")
     
     recorder = Recorder()
     recorder.begin(instrument)
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     
     connection = FileConnection()
     connection.new_data_received.connect(parser.on_new_data_received)
-    connection.begin(instrument, "/home/pau/feina/UPC/projecte/code/GDAIS/test/LOF06.bin")    
+    connection.begin(instrument, "test/LOF06.bin")    
 #    connection = SerialConnection()
 #    connection.new_data_received.connect(parser.on_new_data_received)
 #    connection.begin(instrument)

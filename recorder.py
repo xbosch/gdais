@@ -2,6 +2,7 @@ from PyQt4.QtCore import QThread, QString
 
 from datetime import datetime
 from numpy import dtype, array
+import os
 from tables import *
 from time import time
 
@@ -11,7 +12,7 @@ class Recorder(QThread):
 
     def __init__(self,  parent = None):
         QThread.__init__(self, parent)
-        self.filename = "/home/pau/feina/UPC/projecte/code/GDAIS/data/equip1/equip1"
+        self.filename = "data/equip1/equip1"
         self.filename += "_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".h5"
     
     def __del__(self):
