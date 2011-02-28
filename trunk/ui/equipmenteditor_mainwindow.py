@@ -7,6 +7,8 @@ Module implementing EquipmentEditorMainWindow.
 from PyQt4.QtGui import QFileDialog, QInputDialog, QListWidgetItem, QMainWindow,  QMessageBox, QTreeWidgetItem
 from PyQt4.QtCore import pyqtSignature, QString, Qt
 
+import os
+
 from Ui_equipmenteditor_mainwindow import Ui_EquipmentEditorMainWindow
 from equipment import Equipment, InstrumentConfigAlreadyExistsError
 
@@ -14,9 +16,12 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
     """
     Class documentation goes here.
     """
-    CONF_PATH = 'conf/'
-    EQUIPMENT_PATH = CONF_PATH + 'equips/'
-    INSTRUMENT_PATH = CONF_PATH + 'instruments/'
+    CONF_PATH = '{0}/conf'.format(os.getcwd())
+    EQUIPMENT_PATH = '{0}/equips'.format(CONF_PATH)
+    INSTRUMENT_PATH = '{0}/instruments'.format(CONF_PATH)
+    
+    FILEDIALOG_FILTER = "Equipment configuration (*.json)"
+    FILEDIALOG_FILTER_INSTRUMENT = "Instrument configuration (*.json)"
     
     def __init__(self, parent = None):
         """
@@ -25,7 +30,7 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
         # TODO: temporally load always an instrument
-        self.load_equipment(Equipment("conf/equips/equip2.json"))
+        self.load_equipment(Equipment(self.EQUIPMENT_PATH + "/equip2.json"))
         #self.load_equipment(Equipment())
     
     @pyqtSignature("")
@@ -46,7 +51,7 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
                                             None,
                                             self.trUtf8("Select an equipment description file"),
                                             QString(self.EQUIPMENT_PATH),
-                                            self.trUtf8("*.json"),
+                                            self.trUtf8(self.FILEDIALOG_FILTER),
                                             None)
         if filename:
             self.load_equipment(Equipment(filename))
@@ -62,7 +67,7 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
                                                 None,
                                                 self.trUtf8("Save equipment description file"),
                                                 QString(self.EQUIPMENT_PATH),
-                                                self.trUtf8("*.json"),
+                                                self.trUtf8(self.FILEDIALOG_FILTER),
                                                 None)
         if filename:
             self.dump_equipment(filename)
@@ -77,7 +82,7 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
                                             None,
                                             self.trUtf8("Save equipment description file"),
                                             QString(self.EQUIPMENT_PATH),
-                                            self.trUtf8("*.json"),
+                                            self.trUtf8("Equipment configuration (*.json)"),
                                             None)
         if filename:
             self.dump_equipment(filename)
@@ -114,7 +119,7 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
                                     None,
                                     self.trUtf8("Select an instrument description file"),
                                     QString(self.INSTRUMENT_PATH),
-                                    self.trUtf8("*.json"),
+                                    self.trUtf8(self.FILEDIALOG_FILTER_INSTRUMENT),
                                     None)
         if filename:
             try:

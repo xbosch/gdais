@@ -3,8 +3,8 @@ from PyQt4.QtNetwork import QTcpServer
 
 import signal, sys
 
-from connection import FileConnection, SerialConnection
-from instrument import Instrument
+from connection import BlockingSerialConnection, FileConnection, SerialConnection
+from equipment import Equipment
 from parser import Parser
 from recorder import Recorder
 
@@ -14,41 +14,39 @@ def on_new_packet(packet):
     print TAG, "New packet received:", packet.instrument_packet.name
     if packet.data:
         fields = [str(f.name) for f in packet.instrument_packet.fields]
-        print TAG, '  ', '('+', '.join(["%s: %d" % (x[0], x[1]) for x in zip(fields, packet.data)])+')'
+        str_fields = ', '.join(["{0}: {1:g}".format(x[0], x[1]) for x in zip(fields, packet.data)])
+        print "{0}  ({1})".format(TAG, str_fields)
 
 
 if __name__ == "__main__":
     
-    def signal_handler(signum, frame):
-        print TAG, "Signal %s received, exiting..." % signum
-        app.quit()
-    
     app = QCoreApplication(sys.argv)
     
-    instrument = Instrument("conf/instruments/gps.json")
-#    instrument = Instrument("conf/instruments/compass_f350.json")
+    equipment = Equipment("conf/equips/prova.json")
     
     recorder = Recorder()
-    recorder.begin(instrument)
+    recorder.begin(equipment)
     
-    parser = Parser()
-    parser.new_packet_parsed.connect(on_new_packet)
-    parser.new_packet_parsed.connect(recorder.on_new_packet)
-    parser.begin(instrument)
+    for instrument_config in equipment.instruments:
+        parser = Parser()
+        parser.new_packet_parsed.connect(on_new_packet)
+        parser.new_packet_parsed.connect(recorder.on_new_packet)
+        parser.begin(instrument_config.instrument)
+        
+#        connection = SerialConnection()
+#        connection.new_data_received.connect(parser.on_new_data_received)
+#        connection.begin(instrument_config.instrument)
+        connection = BlockingSerialConnection()
+        connection.new_data_received.connect(parser.on_new_data_received)
+        connection.begin(instrument_config.instrument)
+#        connection = FileConnection()
+#        connection.new_data_received.connect(parser.on_new_data_received)
+#        connection.begin(instrument_config.instrument, "test/LOF06.bin")
     
-    connection = FileConnection()
-    connection.new_data_received.connect(parser.on_new_data_received)
-    connection.begin(instrument, "test/LOF06.bin")    
-#    connection = SerialConnection()
-#    connection.new_data_received.connect(parser.on_new_data_received)
-#    connection.begin(instrument)
-    
-    signal.signal(signal.SIGINT, signal_handler)
-    
+    print TAG, "TCP server: Starting..."
     tcp_server = QTcpServer()
-    if tcp_server.listen():
-        print TAG, "TCP server: running"
-        print TAG, "TCP server: open a connection to http://localhost:%s to quit GDAIS" % tcp_server.serverPort()
+    if tcp_server.listen(port = 12345):
+        print TAG, "TCP server: open a connection to http://localhost:{0} to quit GDAIS".format(tcp_server.serverPort())
         tcp_server.newConnection.connect(app.quit)
     else:
         print TAG, "Unable to start TCP server:", tcp_server.errorString()

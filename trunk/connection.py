@@ -11,14 +11,14 @@ class Connection(QThread):
     # Signal for new data packet received event
     new_data_received = pyqtSignal(bytearray)
     
-    def __init__(self, parent = None):
-        QThread.__init__(self, parent)
-
+    def __init__(self):
+        QThread.__init__(self)
+    
     def begin(self,  instrument):
         self.instrument = instrument
         self.packet = bytearray('')
         self.old_data = None
-        print self.TAG, "Connected:", self.input
+        print self.TAG, "Connected:", self.io_conn
         
         format = self.instrument.packet_format
         if format.FORMAT_END_BYTES in format.rx_format:
@@ -32,11 +32,11 @@ class Connection(QThread):
     
     def run(self):
         self.exec_()
-
+    
     def read_data(self, fd):
         format = self.instrument.packet_format
         while True:
-            data = self.input.read(self.buffer_size)
+            data = self.io_conn.read(self.buffer_size)
             if not data:
                 break
             
@@ -65,7 +65,7 @@ class Connection(QThread):
                     self.new_data_received.emit(self.packet[:self.buffer_size])
                     self.old_data = self.packet[self.buffer_size:]
                     self.packet = bytearray('')
-    
+
 
 class SerialConnection(Connection):
     
@@ -90,28 +90,21 @@ class SerialConnection(Connection):
                     2: serial.STOPBITS_TWO
                 }
     
-    # TODO: TMP #
-    def __init__(self, parent = None):
-        Connection.__init__(self,  parent)
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.on_timeout)
-    # END TMP #
-    
     def __del__(self):
-        if self.input:
+        if self.io_conn:
             print self.TAG, "Closing serial port"
-            self.input.close()
-
+            self.io_conn.close()
+    
     def begin(self,  instrument):
         try:
-            self.input = serial.Serial()
-            self.input.port = instrument.connection.port
-            self.input.baudrate = instrument.connection.baudrate
-            self.input.bytesize = self.BYTESIZE[instrument.connection.data_bits]
-            self.input.parity = self.PARITY[instrument.connection.parity]
-            self.input.stopbits = self.STOPBITS[instrument.connection.stop_bits]
-            self.input.timeout = 0 # non-blocking mode (return immediately on read)
-            self.input.open()
+            self.io_conn = serial.Serial()
+            self.io_conn.port = instrument.connection.port
+            self.io_conn.baudrate = instrument.connection.baudrate
+            self.io_conn.bytesize = self.BYTESIZE[instrument.connection.data_bits]
+            self.io_conn.parity = self.PARITY[instrument.connection.parity]
+            self.io_conn.stopbits = self.STOPBITS[instrument.connection.stop_bits]
+            self.io_conn.timeout = 0 # non-blocking mode (return immediately on read)
+            self.io_conn.open()
         except serial.SerialException:
             print self.TAG,  "Device can not be found or can not be configured"
             raise
@@ -121,19 +114,55 @@ class SerialConnection(Connection):
     def run(self):
         # TODO: initialization of instrument if needed
         
-        notifier = QSocketNotifier(self.input.fileno(), QSocketNotifier.Read)
+        notifier = QSocketNotifier(self.io_conn.fileno(), QSocketNotifier.Read)
         notifier.activated.connect(self.read_data)
         
         # TODO: TMP #
-        self.timer.start(1000)
+#        self.timer.start(1000)
         # END TMP #
         
         Connection.run(self)
     
     # TODO: TMP #
-    def on_timeout(self):
-        self.input.write('\x11')
+#    def on_timeout(self):
+#        self.io_conn.write('\x11')
     # END TMP #
+
+
+class BlockingSerialConnection(SerialConnection):
+    
+    TAG = "[BlockingSerialConnection]"
+    
+    RX_TIMEOUT = 5000
+    
+    def __init__(self):
+        SerialConnection.__init__(self)
+        
+        self.rx_timeout = QTimer()
+        self.rx_timeout.setSingleShot(True)
+    
+    def run(self):
+        # send command after receiving a response packet
+        self.new_data_received.connect(self.send_command)
+        
+        # define a timeout, if response not received send the command again
+        self.rx_timeout.timeout.connect(self.send_command_timeout)
+        self.rx_timeout.start(self.RX_TIMEOUT)
+        
+        # send the first command
+        self.send_command()
+        
+        SerialConnection.run(self)
+    
+    def send_command(self):
+        self.io_conn.write('\x11')
+        
+        # restart reception timeout
+        self.rx_timeout.start(self.RX_TIMEOUT)
+    
+    def send_command_timeout(self):
+        print self.TAG, "Timeout! response packet not received"
+        self.send_command()
 
 
 class FileConnection(Connection):
@@ -141,13 +170,13 @@ class FileConnection(Connection):
     TAG = "[FileConnection]"
     
     def __del__(self):
-        if self.input:
+        if self.io_conn:
             print self.TAG, "Closing input file"
-            self.input.close()
+            self.io_conn.close()
 
     def begin(self,  instrument, file_name):
         try:
-            self.input = open(file_name,  'rb')
+            self.io_conn = open(file_name,  'rb')
         except IOError:
             print self.TAG, "The file does not exist, exiting gracefully"
             self.quit()
@@ -155,6 +184,6 @@ class FileConnection(Connection):
         Connection.begin(self, instrument)
     
     def run(self):
-        self.read_data(self.input.fileno())
+        self.read_data(self.io_conn.fileno())
         
         Connection.run(self)

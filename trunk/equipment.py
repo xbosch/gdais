@@ -13,13 +13,11 @@ class Equipment(object):
     """
     TAG = "[Equipment]"
     
-    instruments = []
-    command_sequences = []
-    
     def __init__(self):
         self.filename = ""
         self.short_name = "new_equipment"
         self.name = "New Equipment"
+        self.instruments = []
     
     def __init__(self,  filename):
         self.filename = filename
@@ -29,6 +27,7 @@ class Equipment(object):
         self.short_name = equip['short_name']
         self.name = equip['name']
         
+        self.instruments = []
         for instr in equip['instruments']:
             self.instruments.append(InstrumentConfig(instr))
     
