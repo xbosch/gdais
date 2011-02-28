@@ -9,24 +9,30 @@ from time import time
 class Recorder(QThread):
     
     TAG = "[Recorder]"
+    DATA_PATH = "data/"
 
-    def __init__(self,  parent = None):
-        QThread.__init__(self, parent)
-        self.filename = "data/equip1/equip1"
-        self.filename += "_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".h5"
+    def __init__(self):
+        QThread.__init__(self)
     
     def __del__(self):
         self.h5file.close()
 
-    def begin(self, instrument):
-        self.h5file = openFile(self.filename, mode = "w", title = "Equip1 data file")
+    def begin(self, equipment):
+        dir = self.DATA_PATH + equipment.short_name
+        if not os.path.exists(dir):
+            os.makedirs(dir) # TODO: race condition if directory created between the two calls, quite unprobable
+        
+        self.filename = "{0}/{1}_{2}.h5"
+        self.filename.format(dir, equipment.short_name, datetime.now().strftime("%Y%m%d_%H%M%S"))
+        self.h5file = openFile(self.filename, mode = "w", title = "{0} data file".format(equipment.name))
 
-        self.tables = {}
-        group = self.h5file.createGroup(self.h5file.root, instrument.short_name, instrument.name)
-        for packet in instrument.rx_packets.itervalues():
-            format = array([], dtype(packet.types() + [("timestamp", "float64")]))
-            short_name = packet.name.lower().replace(' ','_')
-            packet.table = self.h5file.createTable(group, short_name, format, packet.name)
+        for instrument_config in equipment.instruments:
+            instrument = instrument_config.instrument
+            group = self.h5file.createGroup(self.h5file.root, instrument.short_name, instrument.name)
+            for packet in instrument.rx_packets.itervalues():
+                format = array([], dtype(packet.types() + [("timestamp", "float64")]))
+                short_name = packet.name.lower().replace(' ','_')
+                packet.table = self.h5file.createTable(group, short_name, format, packet.name)
         self.start()
 
     def run(self):

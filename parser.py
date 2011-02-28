@@ -18,8 +18,8 @@ class Parser(QThread):
     # Signal for new packet received event
     new_packet_parsed = pyqtSignal(ParsedPacket)
     
-    def __init__(self, parent = None):
-        QThread.__init__(self, parent)
+    def __init__(self):
+        QThread.__init__(self)
 
     def begin(self,  instrument):
         self.packet_format = instrument.packet_format
@@ -41,7 +41,7 @@ class Parser(QThread):
                     data = raw_data[1:]
                 else:
                     parsed_packet = ParsedPacket(raw_data)
-                    parsed_packet.info = "Unknown packet id: " + hex(raw_data[0])
+                    parsed_packet.info = "Unknown packet id: 0x{0:x}".format(raw_data[0])
             else:
                 # without packet number only one packet can be defined
                 packet = self.packets.values()[0]
@@ -54,8 +54,8 @@ class Parser(QThread):
                     self.new_packet_parsed.emit(parsed_packet)
                 else:
                     parsed_packet = ParsedPacket(raw_data, packet)
-                    parsed_packet.info = "Wrong packet length: " + str(len(data))
-                    parsed_packet.info += ", expected:" + str(packet.struct.size)
+                    parsed_packet.info = "Wrong packet length: {0}, expected: {1}"
+                    parsed_packet.info.format(len(data), packet.struct.size)
 
         else:
             parsed_packet = ParsedPacket(raw_data)

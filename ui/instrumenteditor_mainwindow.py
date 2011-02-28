@@ -7,6 +7,8 @@ Module implementing InstrumentEditorMainWindow.
 from PyQt4.QtGui import QFileDialog, QInputDialog, QLineEdit, QListWidgetItem, QMainWindow,  QMessageBox, QTreeWidgetItem
 from PyQt4.QtCore import pyqtSignature, QString, Qt
 
+import os
+
 from Ui_instrumenteditor_mainwindow import Ui_InstrumentEditorMainWindow
 from instrument import Field, Instrument
 from instrument import PacketAlreadyExistsError, WrongPacketTypeError
@@ -15,8 +17,10 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
     """
     Class documentation goes here.
     """
-    CONF_PATH = 'conf/'
-    INSTRUMENT_PATH = CONF_PATH + 'instruments/'
+    CONF_PATH = '{0}/conf'.format(os.getcwd())
+    INSTRUMENT_PATH = '{0}/instruments'.format(CONF_PATH)
+    
+    FILEDIALOG_FILTER = "Instrument configuration (*.json)"
     
     def __init__(self, parent = None):
         """
@@ -25,7 +29,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
         # TODO: temporally load always an instrument
-        self.load_instrument(Instrument(self.INSTRUMENT_PATH + "gps.json"))
+        self.load_instrument(Instrument(self.INSTRUMENT_PATH + "/gps.json"))
         #self.load_instrument(Instrument())
     
     @pyqtSignature("")
@@ -44,7 +48,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
                                             None,
                                             self.trUtf8("Select an instrument description file"),
                                             QString(self.INSTRUMENT_PATH),
-                                            self.trUtf8("*.json"),
+                                            self.trUtf8(self.FILEDIALOG_FILTER),
                                             None)
         if filename:
             self.load_instrument(Instrument(filename))
@@ -60,7 +64,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
                                                 None,
                                                 self.trUtf8("Save instrument description file"),
                                                 QString(self.INSTRUMENT_PATH),
-                                                self.trUtf8("*.json"),
+                                                self.trUtf8(self.FILEDIALOG_FILTER),
                                                 None)
         if filename:
             self.dump_instrument(filename)
@@ -75,7 +79,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
                                             None,
                                             self.trUtf8("Save instrument description file"),
                                             QString(self.INSTRUMENT_PATH),
-                                            self.trUtf8("*.json"),
+                                            self.trUtf8(self.FILEDIALOG_FILTER),
                                             None)
         if filename:
             self.dump_instrument(filename)
@@ -382,11 +386,11 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         
         # packet format
         for i, field in enumerate(self.instrument.packet_format.rx_format):
-            combo_box = getattr(self, 'pf_rx_format_%d'% i)
+            combo_box = getattr(self, 'pf_rx_format_{0}'.format(i))
             combo_box.setCurrentIndex(combo_box.findText(field))
         
         for i, field in enumerate(self.instrument.packet_format.tx_format):
-            combo_box = getattr(self, 'pf_tx_format_%d'% i)
+            combo_box = getattr(self, 'pf_tx_format_{0}'.format(i))
             combo_box.setCurrentIndex(combo_box.findText(field))
         
         for start_byte in self.instrument.packet_format.start_bytes:
@@ -414,8 +418,8 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
     def clear_instrument(self):
         none_index = 4 # TODO: improve
         for i in range(4):
-            getattr(self, 'pf_rx_format_%d'% i).setCurrentIndex(none_index)
-            getattr(self, 'pf_tx_format_%d'% i).setCurrentIndex(none_index)
+            getattr(self, 'pf_rx_format_{0}'.format(i)).setCurrentIndex(none_index)
+            getattr(self, 'pf_tx_format_{0}'.format(i)).setCurrentIndex(none_index)
         
         for byte in xrange(self.pf_start_bytes.count()):
             self.pf_start_bytes.takeItem(0)
@@ -447,14 +451,14 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         # packet format
         self.instrument.packet_format.rx_format = []
         for i in range(4):
-            combo_box = getattr(self, 'pf_rx_format_%d'% i)
+            combo_box = getattr(self, 'pf_rx_format_{0}'.format(i))
             field = str(combo_box.currentText())
             if field != self.instrument.packet_format.FORMAT_EMPTY:
                 self.instrument.packet_format.rx_format.append(field)
         
         self.instrument.packet_format.tx_format = []
         for i in range(4):
-            combo_box = getattr(self, 'pf_tx_format_%d'% i)
+            combo_box = getattr(self, 'pf_tx_format_{0}'.format(i))
             field = str(combo_box.currentText())
             if field != self.instrument.packet_format.FORMAT_EMPTY:
                 self.instrument.packet_format.tx_format.append(field)
