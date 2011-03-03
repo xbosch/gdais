@@ -126,7 +126,8 @@ class InstrumentConfig(object):
         try:
             packet = self.instrument.tx_packets[cmd.id]
         except KeyError:
-            print self.TAG, "Command %s not in instrument %s tx packets" % (cmd.id, self.instrument.name)
+            txt = "Command {0} not in instrument {1} tx packets"
+            print self.TAG, txt.format(cmd.id, self.instrument.name)
             return False
         else:
             cmd.name = packet.name
@@ -142,6 +143,8 @@ class InstrumentConfig(object):
         return None
     
     def dump(self):
+        import os
+        filename = self.instrument.filename[len(os.getcwd())+1:]
         return {
                     'filename': self.instrument.filename,
                     'init_commands': [cmd.dump() for cmd in self.init_commands],
