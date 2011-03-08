@@ -72,6 +72,8 @@ class InstrumentConfig(object):
     """
     TAG = "[InstrumentConfig]"
     
+    DEFAULT_OPERATION_MODE = "Periodic Commands"
+    
     def __init__(self):
         # TODO: not implemented yet
         raise NotImplementedError
@@ -80,7 +82,8 @@ class InstrumentConfig(object):
         if type(instr) is type(''): # str
             self.instrument = Instrument(instr)
             self.init_commands = []
-            self.periodic_commands = []
+            self._operation_mode = self.DEFAULT_OPERATION_MODE
+            self.operation_commands = []
         
         elif type(instr) is type({}): # dict
             self.instrument = Instrument(instr['filename'])
@@ -90,13 +93,26 @@ class InstrumentConfig(object):
                 for c in instr['init_commands']:
                     self.add_init_command(c)
             
-            self.periodic_commands = []
-            if 'periodic_commands' in instr:
-                for c in instr['periodic_commands']:
-                    self.add_periodic_command(c)
+            self._operation_mode = instr['operation_mode']
+            
+            self.operation_commands = []
+            if 'operation_commands' in instr:
+                for c in instr['operation_commands']:
+                    self.add_operation_command(c)
         
         else:
             print TAG, "Unknown parameter type, can't initialize InstrumentConfig"
+    
+    @property
+    def operation_mode(self):
+        """Operation mode of the instrument in this configuration."""
+        return self._operation_mode
+    
+    @operation_mode.setter
+    def operation_mode(self, value):
+        if value != self._operation_mode:
+            self._operation_mode = value
+            self.operation_commands = []
     
     def add_init_command(self, c):
         cmd = Command(c)
@@ -110,24 +126,23 @@ class InstrumentConfig(object):
     def get_init_command(self, num):
         return self._get_command(self.init_commands, num)
     
-    def add_periodic_command(self, c):
-        cmd = PeriodicCommand(c)
+    def add_operation_command(self, c):
+        cmd = OperationCommand(c, self.operation_mode)
         if (self._load_command_info(cmd)):
-            self.periodic_commands.append(cmd)
+            self.operation_commands.append(cmd)
     
-    def delete_periodic_command(self, num):
-        cmd = self._get_command(self.periodic_commands, num)
-        self.periodic_commands.remove(cmd)
+    def delete_operation_command(self, num):
+        cmd = self._get_command(self.operation_commands, num)
+        self.operation_commands.remove(cmd)
     
-    def get_periodic_command(self, num):
-        return self._get_command(self.periodic_commands, num)
+    def get_operation_command(self, num):
+        return self._get_command(self.operation_commands, num)
     
     def _load_command_info(self, cmd):
         try:
             packet = self.instrument.tx_packets[cmd.id]
         except KeyError:
-            txt = "Command {0} not in instrument {1} tx packets"
-            print self.TAG, txt.format(cmd.id, self.instrument.name)
+            print self.TAG, "Command %s not in instrument %s tx packets" % (cmd.id, self.instrument.name)
             return False
         else:
             cmd.name = packet.name
@@ -143,12 +158,11 @@ class InstrumentConfig(object):
         return None
     
     def dump(self):
-        import os
-        filename = self.instrument.filename[len(os.getcwd())+1:]
         return {
                     'filename': self.instrument.filename,
-                    'init_commands': [cmd.dump() for cmd in self.init_commands],
-                    'periodic_commands': [cmd.dump() for cmd in self.periodic_commands]
+                    'init_commands': [c.dump() for c in self.init_commands],
+                    'operation_mode': self.operation_mode, 
+                    'operation_commands': [c.dump() for c in self.operation_commands]
                 }
 
 
@@ -175,25 +189,41 @@ class Command(object):
                 }
 
 
-class PeriodicCommand(Command):
+class OperationCommand(Command):
     """
     Class documentation goes here.
     """
-    DEFAULT_PERIOD = 1000
+    DEFAULTS = {
+        'Periodic Commands': {
+                                'param': 1000, 
+                                'pre_txt': 'Period', 
+                                'post_txt': 'ms'
+                            },
+        'Time Sequences': {
+                                'param': 1000, 
+                                'pre_txt': 'Duration', 
+                                'post_txt': 'ms'
+                            },
+        'Blocking Sequences': {
+                                'param': 5, 
+                                'pre_txt': 'Repeat', 
+                                'post_txt': 'times'
+                            }
+                }
     
-    def __init__(self,  periodic_command):
-        if type(periodic_command) is type(0): # int
-            Command.__init__(self, periodic_command)
-            self.period = self.DEFAULT_PERIOD
+    def __init__(self,  operation_command, operation_mode):
+        if type(operation_command) is type(0): # int
+            Command.__init__(self, operation_command)
+            self.param = self.DEFAULTS[operation_mode]['param']
         
-        elif type(periodic_command) is type({}): #dict
-            Command.__init__(self, periodic_command['command'])
-            self.period = periodic_command['period']
+        elif type(operation_command) is type({}): #dict
+            Command.__init__(self, operation_command['command'])
+            self.param = operation_command['param']
     
     def dump(self):
         return {
                     'command': Command.dump(self), 
-                    'period': self.period
+                    'param': self.param
                 }
 
 

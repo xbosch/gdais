@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>622</width>
-    <height>581</height>
+    <width>724</width>
+    <height>697</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -196,6 +196,9 @@
         </item>
         <item>
          <widget class="QTabWidget" name="tabWidget">
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
           <widget class="QWidget" name="init_commands_tab">
            <attribute name="title">
             <string>Init Commands</string>
@@ -292,9 +295,6 @@
                 <attribute name="headerDefaultSectionSize">
                  <number>250</number>
                 </attribute>
-                <attribute name="headerDefaultSectionSize">
-                 <number>250</number>
-                </attribute>
                 <column>
                  <property name="text">
                   <string>Field</string>
@@ -360,19 +360,90 @@
              </layout>
             </item>
             <item>
-             <widget class="QStackedWidget" name="operation_mode_stack">
-              <widget class="QWidget" name="periodic_commands_page">
-               <layout class="QHBoxLayout" name="horizontalLayout_9">
+             <layout class="QHBoxLayout" name="horizontalLayout_2">
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_4">
                 <item>
-                 <layout class="QVBoxLayout" name="verticalLayout_4">
+                 <widget class="QListWidget" name="operation_commands_list">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>100</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_14">
                   <item>
-                   <widget class="QListWidget" name="periodic_commands_list">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
+                   <widget class="QPushButton" name="operation_commands_add">
+                    <property name="text">
+                     <string>+</string>
                     </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <spacer name="horizontalSpacer_16">
+                    <property name="orientation">
+                     <enum>Qt::Horizontal</enum>
+                    </property>
+                    <property name="sizeType">
+                     <enum>QSizePolicy::Minimum</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>20</width>
+                      <height>20</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="operation_commands_delete">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
+                    <property name="text">
+                     <string>-</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_5">
+                <item>
+                 <layout class="QGridLayout" name="gridLayout_3">
+                  <item row="0" column="1">
+                   <spacer name="horizontalSpacer_3">
+                    <property name="orientation">
+                     <enum>Qt::Horizontal</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>100</width>
+                      <height>20</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                  <item row="0" column="2">
+                   <widget class="QLabel" name="operation_command_param_pre_txt">
+                    <property name="text">
+                     <string>Period:</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="3">
+                   <widget class="QLineEdit" name="operation_command_param">
                     <property name="maximumSize">
                      <size>
                       <width>100</width>
@@ -381,374 +452,45 @@
                     </property>
                    </widget>
                   </item>
-                  <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_14">
-                    <item>
-                     <widget class="QPushButton" name="periodic_commands_add">
-                      <property name="text">
-                       <string>+</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <spacer name="horizontalSpacer_16">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeType">
-                       <enum>QSizePolicy::Minimum</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>20</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                    <item>
-                     <widget class="QPushButton" name="periodic_commands_delete">
-                      <property name="enabled">
-                       <bool>false</bool>
-                      </property>
-                      <property name="text">
-                       <string>-</string>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
+                  <item row="0" column="0">
+                   <widget class="QLabel" name="operation_command_name">
+                    <property name="text">
+                     <string>command_name</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="4">
+                   <widget class="QLabel" name="operation_command_param_post_txt">
+                    <property name="text">
+                     <string>ms</string>
+                    </property>
+                   </widget>
                   </item>
                  </layout>
                 </item>
                 <item>
-                 <layout class="QVBoxLayout" name="verticalLayout_5">
-                  <item>
-                   <layout class="QGridLayout" name="gridLayout_3">
-                    <item row="0" column="1">
-                     <spacer name="horizontalSpacer_3">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>100</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                    <item row="0" column="2">
-                     <widget class="QLabel" name="label_6">
-                      <property name="text">
-                       <string>Period:</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="3">
-                     <widget class="QLineEdit" name="periodic_command_period"/>
-                    </item>
-                    <item row="0" column="0">
-                     <widget class="QLabel" name="periodic_command_name">
-                      <property name="text">
-                       <string>command_name</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="4">
-                     <widget class="QLabel" name="label_11">
-                      <property name="text">
-                       <string>ms</string>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </item>
-                  <item>
-                   <widget class="QTreeWidget" name="periodic_command_values">
-                    <property name="rootIsDecorated">
-                     <bool>false</bool>
-                    </property>
-                    <attribute name="headerDefaultSectionSize">
-                     <number>250</number>
-                    </attribute>
-                    <attribute name="headerDefaultSectionSize">
-                     <number>250</number>
-                    </attribute>
-                    <column>
-                     <property name="text">
-                      <string>Field</string>
-                     </property>
-                    </column>
-                    <column>
-                     <property name="text">
-                      <string>Value</string>
-                     </property>
-                    </column>
-                   </widget>
-                  </item>
-                 </layout>
+                 <widget class="QTreeWidget" name="operation_command_values">
+                  <property name="rootIsDecorated">
+                   <bool>false</bool>
+                  </property>
+                  <attribute name="headerDefaultSectionSize">
+                   <number>250</number>
+                  </attribute>
+                  <column>
+                   <property name="text">
+                    <string>Field</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>Value</string>
+                   </property>
+                  </column>
+                 </widget>
                 </item>
                </layout>
-              </widget>
-              <widget class="QWidget" name="time_sequences_page">
-               <layout class="QHBoxLayout" name="horizontalLayout_2">
-                <item>
-                 <layout class="QVBoxLayout" name="verticalLayout_10">
-                  <item>
-                   <widget class="QListWidget" name="time_sequences_list">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="maximumSize">
-                     <size>
-                      <width>100</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_15">
-                    <item>
-                     <widget class="QPushButton" name="time_sequences_add">
-                      <property name="text">
-                       <string>+</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <spacer name="horizontalSpacer_17">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeType">
-                       <enum>QSizePolicy::Minimum</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>20</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                    <item>
-                     <widget class="QPushButton" name="time_sequences_delete">
-                      <property name="enabled">
-                       <bool>false</bool>
-                      </property>
-                      <property name="text">
-                       <string>-</string>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </item>
-                 </layout>
-                </item>
-                <item>
-                 <layout class="QVBoxLayout" name="verticalLayout_9">
-                  <item>
-                   <layout class="QGridLayout" name="gridLayout_4">
-                    <item row="0" column="1">
-                     <spacer name="horizontalSpacer_7">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>100</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                    <item row="0" column="2">
-                     <widget class="QLabel" name="label_8">
-                      <property name="text">
-                       <string>Duration:</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="3">
-                     <widget class="QLineEdit" name="time_sequence_duration"/>
-                    </item>
-                    <item row="0" column="0">
-                     <widget class="QLabel" name="time_sequence_name">
-                      <property name="text">
-                       <string>command_name</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="4">
-                     <widget class="QLabel" name="label_10">
-                      <property name="text">
-                       <string>ms</string>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </item>
-                  <item>
-                   <widget class="QTreeWidget" name="time_sequence_values">
-                    <property name="rootIsDecorated">
-                     <bool>false</bool>
-                    </property>
-                    <attribute name="headerDefaultSectionSize">
-                     <number>250</number>
-                    </attribute>
-                    <attribute name="headerDefaultSectionSize">
-                     <number>250</number>
-                    </attribute>
-                    <column>
-                     <property name="text">
-                      <string>Field</string>
-                     </property>
-                    </column>
-                    <column>
-                     <property name="text">
-                      <string>Value</string>
-                     </property>
-                    </column>
-                   </widget>
-                  </item>
-                 </layout>
-                </item>
-               </layout>
-              </widget>
-              <widget class="QWidget" name="blocking_sequences_page">
-               <layout class="QHBoxLayout" name="horizontalLayout_8">
-                <item>
-                 <layout class="QVBoxLayout" name="verticalLayout_12">
-                  <item>
-                   <widget class="QListWidget" name="blocking_sequences_list">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="maximumSize">
-                     <size>
-                      <width>100</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_16">
-                    <item>
-                     <widget class="QPushButton" name="blocking_sequences_add">
-                      <property name="text">
-                       <string>+</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <spacer name="horizontalSpacer_18">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeType">
-                       <enum>QSizePolicy::Minimum</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>20</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                    <item>
-                     <widget class="QPushButton" name="blocking_sequences_delete">
-                      <property name="enabled">
-                       <bool>false</bool>
-                      </property>
-                      <property name="text">
-                       <string>-</string>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </item>
-                 </layout>
-                </item>
-                <item>
-                 <layout class="QVBoxLayout" name="verticalLayout_11">
-                  <item>
-                   <layout class="QGridLayout" name="gridLayout_5">
-                    <item row="0" column="1">
-                     <spacer name="horizontalSpacer_8">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>100</width>
-                        <height>0</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                    <item row="0" column="2">
-                     <widget class="QLabel" name="label_7">
-                      <property name="text">
-                       <string>Repeat:</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="3">
-                     <widget class="QLineEdit" name="blocking_sequence_repeat"/>
-                    </item>
-                    <item row="0" column="0">
-                     <widget class="QLabel" name="blocking_sequence_name">
-                      <property name="text">
-                       <string>command_name</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="4">
-                     <widget class="QLabel" name="label_9">
-                      <property name="text">
-                       <string>times</string>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </item>
-                  <item>
-                   <widget class="QTreeWidget" name="blocking_sequence_values">
-                    <property name="rootIsDecorated">
-                     <bool>false</bool>
-                    </property>
-                    <attribute name="headerDefaultSectionSize">
-                     <number>250</number>
-                    </attribute>
-                    <attribute name="headerDefaultSectionSize">
-                     <number>250</number>
-                    </attribute>
-                    <column>
-                     <property name="text">
-                      <string>Field</string>
-                     </property>
-                    </column>
-                    <column>
-                     <property name="text">
-                      <string>Value</string>
-                     </property>
-                    </column>
-                   </widget>
-                  </item>
-                 </layout>
-                </item>
-               </layout>
-              </widget>
-             </widget>
+              </item>
+             </layout>
             </item>
            </layout>
           </widget>
@@ -765,7 +507,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>622</width>
+     <width>724</width>
      <height>23</height>
     </rect>
    </property>
@@ -851,38 +593,6 @@
     <hint type="destinationlabel">
      <x>252</x>
      <y>299</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>operation_mode</sender>
-   <signal>activated(int)</signal>
-   <receiver>operation_mode_stack</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>344</x>
-     <y>156</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>377</x>
-     <y>370</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>operation_mode_stack</sender>
-   <signal>currentChanged(int)</signal>
-   <receiver>operation_mode</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>377</x>
-     <y>370</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>344</x>
-     <y>156</y>
     </hint>
    </hints>
   </connection>
