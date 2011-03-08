@@ -50,13 +50,12 @@ class Instrument(object):
         for num, packet in instr['tx_packets'].iteritems():
             self.tx_packets[int(num)] = Packet(packet)
     
-    def get_byte_order_char(self):
+    @property
+    def byte_order_char(self):
         if self.byte_order in self.BYTE_ORDER_CHAR:
             return self.BYTE_ORDER_CHAR[self.byte_order]
         else:
             return ''
-    
-    byte_order_char = property(get_byte_order_char)
     
     def add_packet(self, num, type):
         packet = Packet()
