@@ -7,9 +7,7 @@ import json
 from numpy import dtype
 
 class Instrument(object):
-    """
-    Class documentation goes here.
-    """
+    
     RX_PACKET = "rx"
     TX_PACKET = "tx"
     
@@ -105,11 +103,14 @@ class Instrument(object):
     
 
 class Connection(object):
-    """
-    Class documentation goes here.
-    """
+    
+    # Connection types
+    class Type:
+        serial = "Serial"
+        file = "File"
+    
     def __init__(self,  conn=None):
-        self.type = "Serial"
+        self._type = Connection.Type.serial
         if conn:
             self.port = conn['port']
             self.baudrate = conn['baudrate']
@@ -124,6 +125,23 @@ class Connection(object):
             self.parity = 'N'
             self.stop_bits = 1
     
+    @property
+    def type(self):
+        """Type of this connection instance."""
+        return self._type
+    
+    @type.setter
+    def type(self, value):
+        type = {
+            Connection.Type.serial: Connection.Type.serial, 
+            Connection.Type.file: Connection.Type.file
+        }.get(value, None)
+        
+        if not type:
+            raise ValueError("Unknown connection type: {0}".format(value))
+        else:
+            _type = type
+    
     def dump(self):
         return {
                     'type': self.type, 
@@ -136,9 +154,7 @@ class Connection(object):
 
 
 class PacketFormat(object):
-    """
-    Class documentation goes here.
-    """
+    
     FORMAT_EMPTY = 'none'
     FORMAT_START_BYTES = 'Start bytes'
     FORMAT_PACKET_NUM = 'Packet num'
@@ -173,9 +189,7 @@ class PacketFormat(object):
 
 
 class Packet(object):
-    """
-    Class documentation goes here.
-    """
+    
     def __init__(self,  packet=None):
         # Defaults
         self.name = ''     
@@ -207,9 +221,7 @@ class Packet(object):
         return types
 
 class Field(object):
-    """
-    Class documentation goes here.
-    """
+    
     EMPTY_FIELD = "EMPTY_FIELD"
     
     def __init__(self,  name,  type):

@@ -72,7 +72,13 @@ class InstrumentConfig(object):
     """
     TAG = "[InstrumentConfig]"
     
-    DEFAULT_OPERATION_MODE = "Periodic Commands"
+    # Operation modes
+    class OperationMode:
+        periodic = "Periodic Commands"
+        sequences = "Time Sequences"
+        blocking = "Blocking Sequences"
+    
+    DEFAULT_OPERATION_MODE = OperationMode.periodic
     
     def __init__(self):
         # TODO: not implemented yet
@@ -142,7 +148,8 @@ class InstrumentConfig(object):
         try:
             packet = self.instrument.tx_packets[cmd.id]
         except KeyError:
-            print self.TAG, "Command %s not in instrument %s tx packets" % (cmd.id, self.instrument.name)
+            txt = "Command {0} not in instrument {1} tx packets"
+            print self.TAG, txt.format(cmd.id, self.instrument.name)
             return False
         else:
             cmd.name = packet.name
@@ -167,9 +174,6 @@ class InstrumentConfig(object):
 
 
 class Command(object):
-    """
-    Class documentation goes here.
-    """
     
     def __init__(self,  cmd):
         self.name = ''
@@ -190,23 +194,21 @@ class Command(object):
 
 
 class OperationCommand(Command):
-    """
-    Class documentation goes here.
-    """
+    
     DEFAULTS = {
-        'Periodic Commands': {
-                                'param': 1000, 
+        InstrumentConfig.OperationMode.periodic: {
                                 'pre_txt': 'Period', 
-                                'post_txt': 'ms'
-                            },
-        'Time Sequences': {
                                 'param': 1000, 
-                                'pre_txt': 'Duration', 
                                 'post_txt': 'ms'
                             },
-        'Blocking Sequences': {
-                                'param': 5, 
-                                'pre_txt': 'Repeat', 
+        InstrumentConfig.OperationMode.sequences: {
+                                'pre_txt': 'Duration', 
+                                'param': 1000, 
+                                'post_txt': 'ms'
+                            },
+        InstrumentConfig.OperationMode.blocking: {
+                                'pre_txt': 'Repeat',
+                                'param': 5,  
                                 'post_txt': 'times'
                             }
                 }

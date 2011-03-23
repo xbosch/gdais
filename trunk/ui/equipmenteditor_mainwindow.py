@@ -73,7 +73,7 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
                                             None,
                                             self.trUtf8("Save equipment description file"),
                                             QString(self.EQUIPMENT_PATH),
-                                            self.trUtf8("Equipment configuration (*.json)"),
+                                            self.trUtf8(self.FILEDIALOG_FILTER),
                                             None)
         if filename:
             self._dump_equipment(filename)
@@ -108,7 +108,9 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
                                     None)
         if filename:
             try:
-                short_name = self.equipment.add_instrument_config(str(filename))
+                import os # save relative instrument file path
+                rel_filename = filename[len(os.getcwd())+1:]
+                short_name = self.equipment.add_instrument_config(str(rel_filename))
             except InstrumentConfigAlreadyExistsError:
                 QMessageBox.warning(None,
                     self.trUtf8("Instrument already configured"),
@@ -173,7 +175,22 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
     
     @pyqtSignature("QString")
     def on_operation_mode_currentIndexChanged(self, text):
-        self._load_operation_mode(str(text))
+        if str(text) == self.instr_cfg.operation_mode:
+            self._load_operation_mode(str(text))
+            
+        else:
+            reply = QMessageBox.warning(None,
+                self.trUtf8("Changing operation mode"),
+                self.trUtf8("""Selecting a different operation mode will delete all configured operation commands. Are you sure you want to continue?"""),
+                QMessageBox.StandardButtons(\
+                    QMessageBox.No | \
+                    QMessageBox.Yes),
+                QMessageBox.No)
+            
+            if reply == QMessageBox.Yes:
+                self._load_operation_mode(str(text))
+            else:
+                self.operation_mode.setCurrentIndex(self.operation_mode.findText(self.instr_cfg.operation_mode))
 
     @pyqtSignature("QListWidgetItem*, QListWidgetItem*")
     def on_operation_commands_list_currentItemChanged(self, current, previous):
@@ -263,6 +280,7 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
             self.init_commands_list.setCurrentItem(self.init_commands_list.item(0))
         
         # operation commands
+        self.operation_mode.setCurrentIndex(self.operation_mode.findText(self.instr_cfg.operation_mode))
         self._load_operation_mode()
     
     def _clear_instrument(self):
@@ -346,4 +364,4 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
         
         command = self.instr_cfg.get_operation_command(int(cmd_num))
         command.values = values
-        command.period = int(self.operation_command_param.text())
+        command.param = int(self.operation_command_param.text())

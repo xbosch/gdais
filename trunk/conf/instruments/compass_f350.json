@@ -50,7 +50,7 @@
    "Packet fields"
   ], 
   "tx_format": [
-   "Packet fields"
+   "Packet num"
   ], 
   "start_bytes": [], 
   "end_bytes": []
