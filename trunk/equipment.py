@@ -80,10 +80,6 @@ class InstrumentConfig(object):
     
     DEFAULT_OPERATION_MODE = OperationMode.periodic
     
-    def __init__(self):
-        # TODO: not implemented yet
-        raise NotImplementedError
-    
     def __init__(self,  instr):
         if type(instr) is type(''): # str
             self.instrument = Instrument(instr)
@@ -124,25 +120,19 @@ class InstrumentConfig(object):
         cmd = Command(c)
         if (self._load_command_info(cmd)):
             self.init_commands.append(cmd)
+        return cmd
     
-    def delete_init_command(self, num):
-        cmd = self._get_command(self.init_commands, num)
+    def delete_init_command(self, cmd):
         self.init_commands.remove(cmd)
-    
-    def get_init_command(self, num):
-        return self._get_command(self.init_commands, num)
     
     def add_operation_command(self, c):
         cmd = OperationCommand(c, self.operation_mode)
         if (self._load_command_info(cmd)):
             self.operation_commands.append(cmd)
+        return cmd
     
-    def delete_operation_command(self, num):
-        cmd = self._get_command(self.operation_commands, num)
+    def delete_operation_command(self, cmd):
         self.operation_commands.remove(cmd)
-    
-    def get_operation_command(self, num):
-        return self._get_command(self.operation_commands, num)
     
     def _load_command_info(self, cmd):
         try:
@@ -158,12 +148,6 @@ class InstrumentConfig(object):
                 cmd.values = [0] * len(cmd.fields)
             return True
     
-    def _get_command(self, commands, id):
-        for cmd in commands:
-            if cmd.id == id:
-                return cmd
-        return None
-    
     def dump(self):
         return {
                     'filename': self.instrument.filename,
@@ -177,6 +161,7 @@ class Command(object):
     
     def __init__(self,  cmd):
         self.name = ''
+        
         if type(cmd) is type(0): # int
             self.id = cmd
             self.values = []
