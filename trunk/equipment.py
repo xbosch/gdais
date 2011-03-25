@@ -3,33 +3,32 @@
 """
 Module implementing the instrument model.
 """
-import json
+import json, logging
 
 from instrument import Instrument
 
 class Equipment(object):
-    """
-    Class documentation goes here.
-    """
-    TAG = "[Equipment]"
     
-    def __init__(self):
-        self.filename = ""
-        self.short_name = "new_equipment"
-        self.name = "New Equipment"
-        self.instruments = []
-    
-    def __init__(self,  filename):
-        self.filename = filename
-        with open(self.filename, "r") as fp:
-            equip = json.load(fp)
+    def __init__(self,  filename=None):
+        self.log = logging.getLogger('GDAIS.Equipment')
         
-        self.short_name = equip['short_name']
-        self.name = equip['name']
+        if filename:
+            self.filename = filename
+            with open(self.filename, "r") as fp:
+                equip = json.load(fp)
+            
+            self.short_name = equip['short_name']
+            self.name = equip['name']
+            
+            self.instruments = []
+            for instr in equip['instruments']:
+                self.instruments.append(InstrumentConfig(instr))
         
-        self.instruments = []
-        for instr in equip['instruments']:
-            self.instruments.append(InstrumentConfig(instr))
+        else:
+            self.filename = ""
+            self.short_name = "new_equipment"
+            self.name = "New Equipment"
+            self.instruments = []
     
     def add_instrument_config(self, filename):
         instr_cfg = InstrumentConfig(filename)
@@ -57,20 +56,12 @@ class Equipment(object):
                     'instruments': [instr.dump() for instr in self.instruments]
                 }
     
-    def to_file(self, filename=""):
-        if filename:
-            with open(filename, "w") as fp:
-                json.dump(self.dump(), fp, indent=True)
-        else:
-            # TODO: not implemented yet
-            raise NotImplementedError
+    def to_file(self, filename):
+        with open(filename, "w") as fp:
+            json.dump(self.dump(), fp, indent=True)
 
 
 class InstrumentConfig(object):
-    """
-    Class documentation goes here.
-    """
-    TAG = "[InstrumentConfig]"
     
     # Operation modes
     class OperationMode:
@@ -81,6 +72,8 @@ class InstrumentConfig(object):
     DEFAULT_OPERATION_MODE = OperationMode.periodic
     
     def __init__(self,  instr):
+        self.log = logging.getLogger('GDAIS.InstrumentConfig')
+        
         if type(instr) is type(''): # str
             self.instrument = Instrument(instr)
             self.init_commands = []
@@ -103,7 +96,7 @@ class InstrumentConfig(object):
                     self.add_operation_command(c)
         
         else:
-            print TAG, "Unknown parameter type, can't initialize InstrumentConfig"
+            self.log.error("Unknown parameter type, can't initialize InstrumentConfig")
     
     @property
     def operation_mode(self):
@@ -117,30 +110,42 @@ class InstrumentConfig(object):
             self.operation_commands = []
     
     def add_init_command(self, c):
-        cmd = Command(c)
-        if (self._load_command_info(cmd)):
+        # create new InitCommand with first rx packet as default reply
+        cmd = InitCommand(c, self.instrument.rx_packets.keys()[0])
+        if self._load_command_info(cmd):
+            self._load_command_info(cmd.reply, Instrument.RX_PACKET)
             self.init_commands.append(cmd)
-        return cmd
+        return cmd # TODO: what to do if info cannot be loaded?
     
     def delete_init_command(self, cmd):
         self.init_commands.remove(cmd)
     
+    def set_command_reply(self, cmd, reply_id):
+        if reply_id != cmd.reply.id:
+            cmd.reply.id = reply_id
+            self._load_command_info(cmd.reply, Instrument.RX_PACKET)
+    
     def add_operation_command(self, c):
         cmd = OperationCommand(c, self.operation_mode)
-        if (self._load_command_info(cmd)):
+        if self._load_command_info(cmd):
             self.operation_commands.append(cmd)
-        return cmd
+        return cmd # TODO: what to do if info cannot be loaded?
     
     def delete_operation_command(self, cmd):
         self.operation_commands.remove(cmd)
     
-    def _load_command_info(self, cmd):
+    def _load_command_info(self, cmd, type=Instrument.TX_PACKET):
         try:
-            packet = self.instrument.tx_packets[cmd.id]
+            if type == Instrument.TX_PACKET:
+                packet = self.instrument.tx_packets[cmd.id]
+            else:
+                packet = self.instrument.rx_packets[cmd.id]
+        
         except KeyError:
-            txt = "Command {0} not in instrument {1} tx packets"
-            print self.TAG, txt.format(cmd.id, self.instrument.name)
+            txt = "Command '{0}' not in instrument '{1}' {2} packets"
+            self.log.error(txt.format(cmd.id, self.instrument.name, type))
             return False
+        
         else:
             cmd.name = packet.name
             cmd.fields = packet.fields
@@ -175,6 +180,24 @@ class Command(object):
                     'id': self.id,
                     'name': self.name,
                     'values': self.values
+                }
+
+
+class InitCommand(Command):
+    
+    def __init__(self, init_command, reply=None):
+        if type(init_command) is type(0): # int
+            Command.__init__(self, init_command)
+            self.reply = Command(reply)
+        
+        elif type(init_command) is type({}): #dict
+            Command.__init__(self, init_command['command'])
+            self.reply = Command(init_command['reply'])
+    
+    def dump(self):
+        return {
+                    'command': Command.dump(self), 
+                    'reply': self.reply.dump()
                 }
 
 

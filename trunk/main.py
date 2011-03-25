@@ -30,12 +30,13 @@ class GDAIS(object):
             self.instr_ctrl = InstrumentController.create(instrument_config)
             self.instr_ctrl.new_packet.connect(self.recorder.on_new_packet)
 
-            # initialize instrument if needed --> TODO: enable
-            if False and instrument_config.init_commands:
+            # initialize instrument if needed
+            if instrument_config.init_commands:
                 self.instr_init = InstrumentInitialization(instrument_config)
                 self.instr_init.finished.connect(self.instr_ctrl.begin)
                 self.instr_init.begin()
             else:
+                self.log.info("Instrument has no initial configuration")
                 self.instr_ctrl.begin()
 
         self.start_tcp_server()
@@ -90,6 +91,7 @@ class InstrumentController(QThread):
         self.log.info("Creating parser...")
         self.parser = Parser()
         # rx signal (parser -> self)
+        self.parser.new_packet_parsed.connect(self.log_new_packet_parsed)
         self.parser.new_packet_parsed.connect(self.on_new_packet_parsed)
         # tx signal (self -> parser)
         self.new_command.connect(self.parser.on_new_command)
@@ -114,22 +116,13 @@ class InstrumentController(QThread):
         # inform new packet received to the listening classes (e.g.: Recorder)
         self.new_packet.emit(packet)
 
+    def log_new_packet_parsed(self, packet):
         # log the event
         self.log.info("New '{0}' packet received".format(packet.instrument_packet.name))
         if packet.data:
             fields = [str(f.name) for f in packet.instrument_packet.fields]
             str_fields = ', '.join(["{0}: {1:g}".format(f, d) for f, d in zip(fields, packet.data)])
             self.log.info("({0})".format(str_fields))
-
-
-class InstrumentInitialization(InstrumentController):
-
-    def __init__(self, instrument_config):
-        InstrumentController.__init__(self, instrument_config)
-        self.log = logging.getLogger('GDAIS.'+instrument_config.instrument.short_name+'.Init')
-
-    def on_new_packet_parsed(self, packet):
-        InstrumentController.on_new_packet_parsed(self, packet)
 
 
 class BlockingInstrumentController(InstrumentController):
@@ -139,7 +132,7 @@ class BlockingInstrumentController(InstrumentController):
     def __init__(self, instrument_config):
         InstrumentController.__init__(self, instrument_config)
 
-        # circular list of commands
+        # circular list of operation commands
         self.commands = deque([command
             for command in instrument_config.operation_commands
                 for i in xrange(command.param)])
@@ -148,20 +141,20 @@ class BlockingInstrumentController(InstrumentController):
         self.rx_timeout.setSingleShot(True)
 
     def run(self):
-        # send command after receiving a response packet
-        self.parser.new_packet_parsed.connect(self.send_command)
-
         # define a timeout, if response not received send the command again
         self.rx_timeout.timeout.connect(self.send_command_timeout)
         self.rx_timeout.start(self.RX_TIMEOUT)
 
         # send the first command
-        self.send_command()
+        self.send_next_command()
 
         InstrumentController.run(self)
+    
+    def on_new_packet_parsed(self, packet):
+        InstrumentController.on_new_packet_parsed(self, packet)
+        self.send_next_command()
 
-    def send_command(self):
-        # send next command
+    def send_next_command(self):
         self.new_command.emit(self.commands[0])
 
         # advance command list
@@ -171,11 +164,97 @@ class BlockingInstrumentController(InstrumentController):
         self.rx_timeout.start(self.RX_TIMEOUT)
 
     def send_command_timeout(self):
-        self.log.info("Timeout! response packet not received")
+        self.log.warn("Timeout! response packet not received")
 
-        # send again last command
-        self.commands.rotate(1)
-        self.send_command()
+        # send next command
+        self.send_next_command()
+
+
+class InstrumentInitialization(BlockingInstrumentController):
+
+    def __init__(self, instrument_config):
+        BlockingInstrumentController.__init__(self, instrument_config)
+        self.log = logging.getLogger('GDAIS.'+instrument_config.instrument.short_name+'.Init')
+
+        # list of init commands
+        self.commands = deque(instrument_config.init_commands)
+        self.current_command = None
+        
+        self.exiting = False
+
+    def begin(self):
+        self.log.info("Starting instrument initialization")
+        BlockingInstrumentController.begin(self)
+    
+    def end_initialization(self, error=False):
+        self.exiting = True
+        
+        if error:
+            self.log.error("Ending initialization as there has been an error.")
+            # TODO: instrument shouldn't start as it has not been initialized correctly
+        else:
+            self.log.info("All init commands sent correctly, ending initialization")
+            
+        self.quit()
+    
+    def quit(self):
+        self.rx_timeout.stop()
+        
+        self.log.debug("Closing init connection...")
+        self.connection.quit()
+        self.connection.wait()
+        del self.connection
+        
+        self.log.debug("Closing init parser...")
+        self.parser.quit()
+        self.parser.wait()
+        del self.parser
+        
+        self.log.debug("Instrument initialization finished!")
+        BlockingInstrumentController.quit(self)
+
+    def on_new_packet_parsed(self, packet):
+        if not self.exiting:
+            # check init command reply
+            # TEMP #
+            self.log.debug("Received packet:")
+            InstrumentController.log_new_packet_parsed(self, packet)
+            self.log.debug("Expected reply:")
+            fields = [str(f.name) for f in packet.instrument_packet.fields]
+            str_fields = ', '.join(["{0}: {1}".format(f, d)
+                                                    for f, d in zip(fields, self.current_command.reply.values)])
+            self.log.info("({0})".format(str_fields))
+            # END TEMP #
+            
+            # if no reply received stop initialization
+            if False:
+                self.log.error("Wrong reply received")
+                self.end_initialization(error=True)
+            
+            self.send_next_command()
+            
+        else:
+            self.log.warn("Received packet while exiting")
+    
+    def log_new_packet_parsed(self, packet):
+        pass # TODO: really??
+
+    def send_next_command(self):
+        # check if there are more init commands to send
+        if self.commands:
+            # send next command
+            self.current_command = self.commands.popleft()
+            self.new_command.emit(self.current_command)
+
+            # restart reception timeout
+            self.rx_timeout.start(self.RX_TIMEOUT)
+            
+        else:
+            self.end_initialization()
+
+    def send_command_timeout(self):
+        self.log.error("Timeout! init command reply not received")
+        self.end_initialization(error=True)
 
 
 class NonBlockingInstrumentController(InstrumentController):
@@ -241,5 +320,5 @@ if __name__ == "__main__":
 
     app = QCoreApplication(sys.argv)
     gdais = GDAIS()
-    gdais.start("conf/equips/prova3.json")
+    gdais.start("conf/equips/sidamon.json")
     sys.exit(app.exec_())

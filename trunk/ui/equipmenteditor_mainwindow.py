@@ -11,6 +11,7 @@ import os
 
 from Ui_equipmenteditor_mainwindow import Ui_EquipmentEditorMainWindow
 from equipment import Equipment, OperationCommand, InstrumentConfigAlreadyExistsError
+from instrument import Field
 
 class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
     """
@@ -30,7 +31,7 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
         # TODO: temporally load always an instrument
-        self._load_equipment(Equipment(self.EQUIPMENT_PATH + "/equip2.json"))
+        self._load_equipment(Equipment(self.EQUIPMENT_PATH + "/sidamon.json"))
         #self._load_equipment(Equipment())
     
     
@@ -137,17 +138,22 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
             self._save_init_command(previous.cmd)
         else:
             self.init_commands_delete.setEnabled(True)
+            self.init_command_values.setEnabled(True)
+            self.init_command_reply.setEnabled(True)
+            self.init_command_reply_values.setEnabled(True)
         
         if current:
             self._load_init_command(current.cmd)
         else:
             self.init_commands_delete.setEnabled(False)
+            self.init_command_values.setEnabled(False)
+            self.init_command_reply.setEnabled(False)
+            self.init_command_reply_values.setEnabled(False)
     
     @pyqtSignature("")
     def on_init_commands_add_clicked(self):
-        tx_packets = {}
-        for num, packet in self.instr_cfg.instrument.tx_packets.iteritems():
-            tx_packets[packet.name] = num
+        tx_packets = dict([ (packet.name, num)
+                            for num, packet in self.instr_cfg.instrument.tx_packets.iteritems() ])
         
         (text, ok) = QInputDialog.getItem(\
             self,
@@ -170,6 +176,32 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
         self.init_commands_list.takeItem(self.init_commands_list.currentRow())
         self.instr_cfg.delete_init_command(command)
 
+    @pyqtSignature("QString")
+    def on_init_command_reply_currentIndexChanged(self, text):
+        if self.init_commands_list.currentItem():
+            current_init_cmd = self.init_commands_list.currentItem().cmd
+            current_reply_name = current_init_cmd.reply.name
+            
+            if str(text) == current_reply_name:
+                self._clear_init_command_reply()
+                self._load_init_command_reply(current_init_cmd, str(text))
+                
+            else:
+                reply = QMessageBox.warning(None,
+                    self.trUtf8("Changing reply packet"),
+                    self.trUtf8("""Selecting a different reply packet will delete all configured reply packet values. Are you sure you want to continue?"""),
+                    QMessageBox.StandardButtons(\
+                        QMessageBox.No | \
+                        QMessageBox.Yes),
+                    QMessageBox.No)
+                
+                if reply == QMessageBox.Yes:
+                    self._clear_init_command_reply()
+                    self._load_init_command_reply(current_init_cmd, str(text))
+                else:
+                    self.init_command_reply.setCurrentIndex(
+                        self.init_command_reply.findText(current_reply_name))
+
 
     ### OPERATION COMMANDS ###
     
@@ -190,7 +222,8 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
             if reply == QMessageBox.Yes:
                 self._load_operation_mode(str(text))
             else:
-                self.operation_mode.setCurrentIndex(self.operation_mode.findText(self.instr_cfg.operation_mode))
+                self.operation_mode.setCurrentIndex(
+                    self.operation_mode.findText(self.instr_cfg.operation_mode))
 
     @pyqtSignature("QListWidgetItem*, QListWidgetItem*")
     def on_operation_commands_list_currentItemChanged(self, current, previous):
@@ -198,17 +231,20 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
             self._save_operation_command(previous.cmd)
         else:
             self.operation_commands_delete.setEnabled(True)
+            self.operation_command_param.setEnabled(True)
+            self.operation_command_values.setEnabled(True)
         
         if current:
             self._load_operation_command(current.cmd)
         else:
             self.operation_commands_delete.setEnabled(False)
+            self.operation_command_param.setEnabled(False)
+            self.operation_command_values.setEnabled(False)
     
     @pyqtSignature("")
     def on_operation_commands_add_clicked(self):
-        tx_packets = {}
-        for num, packet in self.instr_cfg.instrument.tx_packets.iteritems():
-            tx_packets[packet.name] = num
+        tx_packets = dict([ (packet.name, num)
+                            for num, packet in self.instr_cfg.instrument.tx_packets.iteritems() ])
         
         (text, ok) = QInputDialog.getItem(\
             self,
@@ -275,12 +311,7 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
         self.instrument_name.setText(self.instr_cfg.instrument.name)
         
         # init commands
-        for cmd in self.instr_cfg.init_commands:
-            item = QListWidgetItem(str(cmd.id))
-            item.cmd = cmd
-            self.init_commands_list.addItem(item)
-        if self.init_commands_list.count():
-            self.init_commands_list.setCurrentItem(self.init_commands_list.item(0))
+        self._load_init_commands()
         
         # operation commands
         self.operation_mode.setCurrentIndex(self.operation_mode.findText(self.instr_cfg.operation_mode))
@@ -288,13 +319,7 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
     
     def _clear_instrument(self):
         self.instrument_name.setText('')
-        
-        # init commands
-        for i in xrange(self.init_commands_list.count()):
-            self.init_commands_list.takeItem(0)
-        self.init_command_name.setText('')
-        
-        # operation commands
+        self._clear_init_commands()
         self._clear_operation_mode()
 
     def _save_instrument(self):
@@ -311,21 +336,38 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
             self._load_operation_command(command) # TODO: needed to reload the instrument into the interface
 
     ## Init commands ##
+    def _load_init_commands(self):
+        self.init_command_replies = dict([ (packet.name, num)
+                            for num, packet in self.instr_cfg.instrument.rx_packets.iteritems() ])
+        self.init_command_reply.addItems(self.init_command_replies.keys())
+        
+        self._load_commands(self.instr_cfg.init_commands, self.init_commands_list)
+    
+    def _clear_init_commands(self):
+        self._clear_commands(self.init_commands_list)
+        self.init_command_reply.clear()
+    
     def _load_init_command(self, command):
         self.init_command_name.setText(command.name)
-        for field, value in zip(command.fields, command.values):
-            item = QTreeWidgetItem([field.name, str(value)])
-            item.setFlags(item.flags() | Qt.ItemIsEditable)
-            self.init_command_values.addTopLevelItem(item)
+        self._load_command_values(command, self.init_command_values)
+        
+        self.init_command_reply.setCurrentIndex(
+                                                self.init_command_reply.findText(command.reply.name))
+        self._clear_init_command_reply()
+        self._load_init_command_reply(command, command.reply.name)
     
     def _save_init_command(self, command):
-        values = []
-        for i in xrange(self.init_command_values.topLevelItemCount()):
-            item = self.init_command_values.takeTopLevelItem(0)
-            values.append(str(item.text(1)))
-        command.values = values
-    
+        command.reply.values = self._get_command_values(self.init_command_reply_values)
+        command.values = self._get_command_values(self.init_command_values)
         self.init_command_name.setText('')
+    
+    def _clear_init_command_reply(self):
+        self._get_command_values(self.init_command_reply_values)
+    
+    def _load_init_command_reply(self, command, reply_name):
+        reply_id = self.init_command_replies[reply_name]
+        self.instr_cfg.set_command_reply(command, reply_id)
+        self._load_command_values(command.reply, self.init_command_reply_values)
     
     ## Operation commands ##
     def _load_operation_mode(self, operation_mode=''):
@@ -338,35 +380,45 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
         self.operation_command_param_pre_txt.setText("{0}:".format(texts['pre_txt']))
         self.operation_command_param_post_txt.setText(texts['post_txt'])
         
-        for cmd in self.instr_cfg.operation_commands:
-            item = QListWidgetItem(str(cmd.id))
-            item.cmd = cmd
-            self.operation_commands_list.addItem(item)
-        if self.operation_commands_list.count():
-            self.operation_commands_list.setCurrentItem(self.operation_commands_list.item(0))
+        self._load_commands(self.instr_cfg.operation_commands, self.operation_commands_list)
     
     def _clear_operation_mode(self):
-        for i in xrange(self.operation_commands_list.count()):
-            self.operation_commands_list.takeItem(0)
-        self.operation_command_name.setText('')
-        self.operation_command_param.setText('')
+        self._clear_commands(self.operation_commands_list)
     
     def _load_operation_command(self, command):
         self.operation_command_name.setText(command.name)
         self.operation_command_param.setText(str(command.param))
-        for field, value in zip(command.fields, command.values):
-            item = QTreeWidgetItem([field.name, str(value)])
-            item.setFlags(item.flags() | Qt.ItemIsEditable)
-            self.operation_command_values.addTopLevelItem(item)
+        self._load_command_values(command, self.operation_command_values)
     
     def _save_operation_command(self, command):
-        values = []
-        for i in xrange(self.operation_command_values.topLevelItemCount()):
-            item = self.operation_command_values.takeTopLevelItem(0)
-            values.append(str(item.text(1)))
-        
-        command.values = values
+        command.values = self._get_command_values(self.operation_command_values)
         command.param = int(self.operation_command_param.text())
-        
         self.operation_command_name.setText('')
         self.operation_command_param.setText('')
+
+    ## Commands aux methods ##
+    def _load_commands(self, commands, commands_list_widget):
+        for cmd in commands:
+            item = QListWidgetItem(str(cmd.id))
+            item.cmd = cmd
+            commands_list_widget.addItem(item)
+        if commands_list_widget.count():
+            commands_list_widget.setCurrentItem(commands_list_widget.item(0))
+    
+    def _clear_commands(self, commands_list_widget):
+        for i in xrange(commands_list_widget.count()):
+            commands_list_widget.takeItem(0)
+    
+    def _load_command_values(self, command, values_widget):
+        for field, value in zip(command.fields, command.values):
+            item = QTreeWidgetItem([field.name, str(value)])
+            if field.name != Field.EMPTY_FIELD:
+                item.setFlags(item.flags() | Qt.ItemIsEditable)
+            values_widget.addTopLevelItem(item)
+    
+    def _get_command_values(self, values_widget):
+        values = []
+        for i in xrange(values_widget.topLevelItemCount()):
+            item = values_widget.takeTopLevelItem(0)
+            values.append(str(item.text(1)))
+        return values

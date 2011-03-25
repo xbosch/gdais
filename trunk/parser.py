@@ -21,6 +21,9 @@ class Parser(QThread):
     
     def __init__(self):
         QThread.__init__(self)
+    
+    def __del__(self):
+        self.log.debug("Deleting parser thread.")
 
     def begin(self,  instrument):
         self.log = logging.getLogger('GDAIS.'+instrument.short_name+'.Parser')
@@ -39,6 +42,7 @@ class Parser(QThread):
     
     def run(self):
         self.exec_()
+        self.log.debug("Ending parser thread.")
     
     def on_new_command(self, command):
         self.log.debug("Sending '{0}' command".format(command.name))

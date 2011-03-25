@@ -28,6 +28,9 @@ class Connection(QThread):
         
         return connection(*args, **kwds)
     
+    def __del__(self):
+        self.log.debug("Deleting connection thread.")
+    
     def begin(self,  instrument):
         self.instrument = instrument
         self.packet = bytearray()
@@ -46,6 +49,7 @@ class Connection(QThread):
     
     def run(self):
         self.exec_()
+        self.log.debug("Ending connection thread.")
     
     def send_data(self, data):
         # implemented if connection can send data
@@ -110,6 +114,7 @@ class SerialConnection(Connection):
         if self.io_conn:
             self.log.info("Closing serial port")
             self.io_conn.close()
+        Connection.__del__(self)
     
     def begin(self,  instrument):
         self.log = logging.getLogger('GDAIS.'+instrument.short_name+'.SerialConnection')
@@ -144,6 +149,7 @@ class FileConnection(Connection):
         if self.io_conn:
             self.log.info("Closing input file")
             self.io_conn.close()
+        Connection.__del__(self)
 
     def begin(self,  instrument, file_name):
         self.log = logging.getLogger("GDAIS."+instrument.short_name+".FileConnection")
