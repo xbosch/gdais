@@ -1,0 +1,168 @@
+{
+ "instruments": [
+  {
+   "operation_commands": [
+    {
+     "command": {
+      "values": [], 
+      "id": 170, 
+      "name": "Request Ta"
+     }, 
+     "param": 1000
+    }, 
+    {
+     "command": {
+      "values": [], 
+      "id": 172, 
+      "name": "Request Tref"
+     }, 
+     "param": 1000
+    }, 
+    {
+     "command": {
+      "values": [], 
+      "id": 174, 
+      "name": "Request Tph_ref"
+     }, 
+     "param": 1000
+    }
+   ], 
+   "init_commands": [], 
+   "operation_mode": "Time Sequences", 
+   "filename": "conf/instruments/ARIEL.json"
+  }, 
+  {
+   "operation_commands": [
+    {
+     "command": {
+      "values": [
+       "0", 
+       "205"
+      ], 
+      "id": 52, 
+      "name": "Request Data"
+     }, 
+     "param": 1000
+    }
+   ], 
+   "init_commands": [
+    {
+     "reply": {
+      "values": [
+       "0", 
+       "208"
+      ], 
+      "id": 49, 
+      "name": "Go To Config Ack"
+     }, 
+     "command": {
+      "values": [
+       "0", 
+       "209"
+      ], 
+      "id": 48, 
+      "name": "Go To Config"
+     }
+    }, 
+    {
+     "reply": {
+      "values": [
+       "0", 
+       "48"
+      ], 
+      "id": 209, 
+      "name": "Set Output Mode Ack"
+     }, 
+     "command": {
+      "values": [
+       "2", 
+       "62", 
+       "241"
+      ], 
+      "id": 208, 
+      "name": "Set Output Mode"
+     }
+    }, 
+    {
+     "reply": {
+      "values": [
+       "0", 
+       "46"
+      ], 
+      "id": 211, 
+      "name": "Set Output Settings Ack"
+     }, 
+     "command": {
+      "values": [
+       "4", 
+       "2054", 
+       "29"
+      ], 
+      "id": 210, 
+      "name": "Set Output Settings"
+     }
+    }, 
+    {
+     "reply": {
+      "values": [
+       "0", 
+       "252"
+      ], 
+      "id": 5, 
+      "name": "Set Period Ack"
+     }, 
+     "command": {
+      "values": [
+       "2", 
+       "1152", 
+       "119"
+      ], 
+      "id": 4, 
+      "name": "Set Period"
+     }
+    }, 
+    {
+     "reply": {
+      "values": [
+       "0", 
+       "44"
+      ], 
+      "id": 213, 
+      "name": "Set Output Skip Factor Ack"
+     }, 
+     "command": {
+      "values": [
+       "2", 
+       "65535", 
+       "45"
+      ], 
+      "id": 212, 
+      "name": "Set Output Skip Factor"
+     }
+    }, 
+    {
+     "reply": {
+      "values": [
+       "0", 
+       "240"
+      ], 
+      "id": 17, 
+      "name": "Go To Measurement Ack"
+     }, 
+     "command": {
+      "values": [
+       "0", 
+       "241"
+      ], 
+      "id": 16, 
+      "name": "Go To Measurement"
+     }
+    }
+   ], 
+   "operation_mode": "Periodic Commands", 
+   "filename": "conf/instruments/MTi-G.json"
+  }
+ ], 
+ "name": "Avio", 
+ "short_name": "avio"
+}

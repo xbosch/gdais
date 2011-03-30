@@ -14,7 +14,7 @@ class GDAIS(object):
     def __init__(self):
         logging.basicConfig(
                             level=logging.DEBUG,
-                            format="[%(name)s] %(levelname)s: %(message)s", 
+                            format="%(asctime)s [%(name)s] %(levelname)s: %(message)s", 
                             stream=sys.stdout)
         self.log = logging.getLogger("GDAIS")
         self.log.info("Welcome to GDAIS!")
@@ -25,21 +25,37 @@ class GDAIS(object):
         self.recorder = Recorder()
         self.recorder.begin(equipment)
 
+        self.instrument_init_controllers = []
+        self.instrument_controllers = []
         for instrument_config in equipment.instruments:
             # create instrument controller
-            self.instr_ctrl = InstrumentController.create(instrument_config)
-            self.instr_ctrl.new_packet.connect(self.recorder.on_new_packet)
+            instr_ctrl = InstrumentController.create(instrument_config)
+            instr_ctrl.new_packet.connect(self.recorder.on_new_packet)
 
             # initialize instrument if needed
             if instrument_config.init_commands:
-                self.instr_init = InstrumentInitialization(instrument_config)
-                self.instr_init.finished.connect(self.instr_ctrl.begin)
-                self.instr_init.begin()
+                instr_init = InstrumentInitialization(instrument_config)
+                instr_init.finished.connect(instr_ctrl.begin)
+                instr_init.begin()
+            
+                # store the instrument controller instance
+                self.instrument_init_controllers.append(instr_init)
+                
             else:
-                self.log.info("Instrument has no initial configuration")
-                self.instr_ctrl.begin()
+                txt = "Instrument '{0}' has no initial configuration"
+                self.log.info(txt.format(instrument_config.instrument.name))
+                instr_ctrl.begin()
+            
+            # store the instrument controller instance
+            self.instrument_controllers.append(instr_ctrl)
 
         self.start_tcp_server()
+    
+    def quit(self):
+        for instr_ctrl in self.instrument_controllers:
+            instr_ctrl.quit()
+        
+        app.quit()
 
     def start_tcp_server(self):
         self.log.info("TCP server: Starting...")
@@ -47,7 +63,7 @@ class GDAIS(object):
         if self.tcp_server.listen(port = 12345):
             txt = "TCP server: open a connection to http://localhost:{0} to quit GDAIS"
             self.log.info(txt.format(self.tcp_server.serverPort()))
-            self.tcp_server.newConnection.connect(app.quit)
+            self.tcp_server.newConnection.connect(self.quit)
         else:
             self.log.warn("Unable to start TCP server: {0}".format(self.tcp_server.errorString()))
 
@@ -55,7 +71,7 @@ class GDAIS(object):
             timeout = 10*1000
             self.log.info("GDAIS will run for {0} seconds and then die.".format(timeout/1000))
             self.timer = QTimer()
-            self.timer.timeout.connect(app.quit)
+            self.timer.timeout.connect(self.quit)
             self.timer.start(timeout)
 
 
@@ -71,7 +87,7 @@ class InstrumentController(QThread):
         QThread.__init__(self)
         self.log = logging.getLogger('GDAIS.'+instrument_config.instrument.short_name)
         self.instr_cfg = instrument_config
-
+    
     @staticmethod
     def create(instrument_config, *args, **kwds):
         om = InstrumentConfig.OperationMode
@@ -86,6 +102,9 @@ class InstrumentController(QThread):
             raise Exception(txt.format(instrument_config.operation_mode))
 
         return controller(instrument_config, *args, **kwds)
+    
+    def __del__(self):
+        self.log.debug("Deleting InstrumentController thread")
 
     def begin(self):
         self.log.info("Creating parser...")
@@ -111,6 +130,19 @@ class InstrumentController(QThread):
 
     def run(self):
         self.exec_()
+    
+    def quit(self):
+        self.log.debug("Closing connection...")
+        self.connection.quit()
+        self.connection.wait()
+        del self.connection
+        
+        self.log.debug("Closing parser...")
+        self.parser.quit()
+        self.parser.wait()
+        del self.parser
+        
+        QThread.quit(self)
 
     def on_new_packet_parsed(self, packet):
         # inform new packet received to the listening classes (e.g.: Recorder)
@@ -199,19 +231,8 @@ class InstrumentInitialization(BlockingInstrumentController):
     
     def quit(self):
         self.rx_timeout.stop()
-        
-        self.log.debug("Closing init connection...")
-        self.connection.quit()
-        self.connection.wait()
-        del self.connection
-        
-        self.log.debug("Closing init parser...")
-        self.parser.quit()
-        self.parser.wait()
-        del self.parser
-        
-        self.log.debug("Instrument initialization finished!")
         BlockingInstrumentController.quit(self)
+        self.log.debug("Instrument initialization finished!")
 
     def on_new_packet_parsed(self, packet):
         if not self.exiting:
