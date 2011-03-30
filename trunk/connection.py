@@ -29,7 +29,7 @@ class Connection(QThread):
         return connection(*args, **kwds)
     
     def __del__(self):
-        self.log.debug("Deleting connection thread.")
+        self.log.debug("Deleting connection thread")
     
     def begin(self,  instrument):
         self.instrument = instrument
@@ -44,12 +44,14 @@ class Connection(QThread):
             # suppose all packets of the same length as there's no end mark
             packet = instrument.rx_packets.values()[0]
             self.buffer_size = packet.struct.size # struct added by parser
+            if format.FORMAT_PACKET_NUM in format.rx_format:
+                self.buffer_size += 1
         
         self.start()
     
     def run(self):
         self.exec_()
-        self.log.debug("Ending connection thread.")
+        self.log.debug("Ending connection thread")
     
     def send_data(self, data):
         # implemented if connection can send data
@@ -112,6 +114,9 @@ class SerialConnection(Connection):
     
     def __del__(self):
         if self.io_conn:
+            self.log.debug("Clearing serial port buffers (In and Out)")
+            self.io_conn.flushOutput()
+            self.io_conn.flushInput()
             self.log.info("Closing serial port")
             self.io_conn.close()
         Connection.__del__(self)

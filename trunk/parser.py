@@ -23,7 +23,7 @@ class Parser(QThread):
         QThread.__init__(self)
     
     def __del__(self):
-        self.log.debug("Deleting parser thread.")
+        self.log.debug("Deleting parser thread")
 
     def begin(self,  instrument):
         self.log = logging.getLogger('GDAIS.'+instrument.short_name+'.Parser')
@@ -42,10 +42,10 @@ class Parser(QThread):
     
     def run(self):
         self.exec_()
-        self.log.debug("Ending parser thread.")
+        self.log.debug("Ending parser thread")
     
     def on_new_command(self, command):
-        self.log.debug("Sending '{0}' command".format(command.name))
+        self.log.debug("Sending '{0}' command (0x{1:X})".format(command.name, command.id))
         packet = self.tx_packets[command.id]
         data = bytearray()
         if self.packet_format.FORMAT_PACKET_NUM in self.packet_format.tx_format:
@@ -63,7 +63,9 @@ class Parser(QThread):
                     data = raw_data[1:]
                 else:
                     parsed_packet = ParsedPacket(raw_data)
-                    parsed_packet.info = "Unknown packet id: 0x{0:x}".format(raw_data[0])
+                    txt = "Unknown packet id: 0x{0:X} (Raw Data: {1})"
+                    txt_raw =  ' '.join(['0x{0:X}'.format(d) for d in raw_data])
+                    parsed_packet.info = txt.format(raw_data[0], txt_raw)
             else:
                 # without packet number only one packet can be defined
                 packet = self.rx_packets.values()[0]
@@ -76,8 +78,9 @@ class Parser(QThread):
                     self.new_packet_parsed.emit(parsed_packet)
                 else:
                     parsed_packet = ParsedPacket(raw_data, packet)
-                    parsed_packet.info = "Wrong packet length: {0}, expected: {1}"
-                    parsed_packet.info.format(len(data), packet.struct.size)
+                    txt = "Wrong packet length: {0}, expected: {1} (Raw Data: {2})"
+                    txt_raw =  ' '.join(['0x{0:X}'.format(d) for d in raw_data])
+                    parsed_packet.info = txt.format(len(data), packet.struct.size, txt_raw)
 
         else:
             parsed_packet = ParsedPacket(raw_data)

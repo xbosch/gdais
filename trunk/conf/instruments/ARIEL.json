@@ -1,0 +1,134 @@
+{
+ "byte_order": "big-endian", 
+ "rx_packets": {
+  "171": {
+   "fields": [
+    {
+     "type": "uint16", 
+     "name": "Tv"
+    }, 
+    {
+     "type": "uint16", 
+     "name": "Th"
+    }
+   ], 
+   "name": "Ta"
+  }, 
+  "173": {
+   "fields": [
+    {
+     "type": "uint16", 
+     "name": "Tref_v"
+    }, 
+    {
+     "type": "uint16", 
+     "name": "Tref_h"
+    }
+   ], 
+   "name": "Tref"
+  }, 
+  "175": {
+   "fields": [
+    {
+     "type": "uint16", 
+     "name": "Tph_v"
+    }, 
+    {
+     "type": "uint16", 
+     "name": "Tph_h"
+    }
+   ], 
+   "name": "Tph_ref"
+  }, 
+  "177": {
+   "fields": [
+    {
+     "type": "uint16", 
+     "name": "Tint"
+    }, 
+    {
+     "type": "uint16", 
+     "name": "EMPTY_FIELD"
+    }
+   ], 
+   "name": "Tint"
+  }, 
+  "179": {
+   "fields": [
+    {
+     "type": "uint16", 
+     "name": "Text"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "EMPTY_FIELD"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "EMPTY_FIELD"
+    }
+   ], 
+   "name": "Text"
+  }, 
+  "181": {
+   "fields": [
+    {
+     "type": "uint16", 
+     "name": "Th"
+    }, 
+    {
+     "type": "uint16", 
+     "name": "Tv"
+    }
+   ], 
+   "name": "Ta_Dike"
+  }
+ }, 
+ "name": "ARIEL", 
+ "short_name": "ariel", 
+ "connection": {
+  "parity": "N", 
+  "baudrate": 19200, 
+  "stop_bits": 1, 
+  "data_bits": 8, 
+  "type": "Serial", 
+  "port": "/dev/ttyS0"
+ }, 
+ "packet_format": {
+  "rx_format": [
+   "Packet num", 
+   "Packet fields"
+  ], 
+  "tx_format": [
+   "Packet num"
+  ], 
+  "start_bytes": [], 
+  "end_bytes": []
+ }, 
+ "tx_packets": {
+  "170": {
+   "fields": [], 
+   "name": "Request Ta"
+  }, 
+  "172": {
+   "fields": [], 
+   "name": "Request Tref"
+  }, 
+  "174": {
+   "fields": [], 
+   "name": "Request Tph_ref"
+  }, 
+  "176": {
+   "fields": [], 
+   "name": "Request Tint"
+  }, 
+  "178": {
+   "fields": [], 
+   "name": "Request Text"
+  }, 
+  "180": {
+   "fields": [], 
+   "name": "Request Ta_Dike"
+  }
+ }
+}

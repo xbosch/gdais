@@ -42,7 +42,7 @@
     }
    ], 
    "operation_mode": "Blocking Sequences", 
-   "filename": "conf/instruments/compass_f350_2.json"
+   "filename": "conf/instruments/compass_f350.json"
   }
  ], 
  "name": "Equip Sidamon", 

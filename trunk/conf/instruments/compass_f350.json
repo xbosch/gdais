@@ -59,6 +59,10 @@
   "17": {
    "fields": [], 
    "name": "Request Compass Measure"
+  }, 
+  "18": {
+   "fields": [], 
+   "name": "Non-existent request"
   }
  }
 }
