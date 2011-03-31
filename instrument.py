@@ -155,17 +155,15 @@ class Connection(object):
 
 class PacketFormat(object):
     
-    FORMAT_EMPTY = 'none'
-    FORMAT_START_BYTES = 'Start bytes'
-    FORMAT_PACKET_NUM = 'Packet num'
-    FORMAT_PACKET_FIELDS = 'Packet fields'
-    FORMAT_END_BYTES = 'End bytes'
-    FORMAT_FIELDS = [
-                    FORMAT_START_BYTES, 
-                    FORMAT_PACKET_NUM, 
-                    FORMAT_PACKET_FIELDS, 
-                    FORMAT_END_BYTES
-                ]
+    # Format fields
+    class FormatField:
+        empty = 'none'
+        start_bytes = 'Start bytes'
+        length = 'Length'
+        packet_num = 'Packet num'
+        packet_fields = 'Packet fields'
+        checksum = 'Checksum'
+        end_bytes = 'End bytes'
     
     def __init__(self,  packet_format=None):
         if packet_format:

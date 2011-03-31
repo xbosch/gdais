@@ -1,6 +1,8 @@
 from PyQt4.QtCore import pyqtSignal, QThread
 import logging, struct
 
+from instrument import PacketFormat
+
 
 class ParsedPacket(object):
     
@@ -48,14 +50,14 @@ class Parser(QThread):
         self.log.debug("Sending '{0}' command (0x{1:X})".format(command.name, command.id))
         packet = self.tx_packets[command.id]
         data = bytearray()
-        if self.packet_format.FORMAT_PACKET_NUM in self.packet_format.tx_format:
+        if PacketFormat.FormatField.packet_num in self.packet_format.tx_format:
             data.append(command.id)
         data.extend(packet.struct.pack(*command.values))
         self.new_data_ready.emit(data)
 
     def on_new_data_received(self, raw_data):
         if raw_data:
-            if self.packet_format.FORMAT_PACKET_NUM in self.packet_format.rx_format:
+            if PacketFormat.FormatField.packet_num in self.packet_format.rx_format:
                 packet = None
                 if raw_data[0] in self.rx_packets:
                     packet_num = raw_data[0]

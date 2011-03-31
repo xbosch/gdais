@@ -10,7 +10,7 @@ from PyQt4.QtCore import pyqtSignature, QString, Qt
 import os
 
 from Ui_instrumenteditor_mainwindow import Ui_InstrumentEditorMainWindow
-from instrument import Field, Instrument
+from instrument import Field, Instrument, PacketFormat
 from instrument import PacketAlreadyExistsError, WrongPacketTypeError
 
 class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
@@ -453,14 +453,14 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         for i in range(4):
             combo_box = getattr(self, 'pf_rx_format_{0}'.format(i))
             field = str(combo_box.currentText())
-            if field != self.instrument.packet_format.FORMAT_EMPTY:
+            if field != PacketFormat.FormatField.empty:
                 self.instrument.packet_format.rx_format.append(field)
         
         self.instrument.packet_format.tx_format = []
         for i in range(4):
             combo_box = getattr(self, 'pf_tx_format_{0}'.format(i))
             field = str(combo_box.currentText())
-            if field != self.instrument.packet_format.FORMAT_EMPTY:
+            if field != PacketFormat.FormatField.empty:
                 self.instrument.packet_format.tx_format.append(field)
         
         self.instrument.packet_format.start_bytes = []

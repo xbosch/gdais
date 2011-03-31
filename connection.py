@@ -3,6 +3,7 @@ from PyQt4.QtCore import pyqtSignal, QSocketNotifier, QThread, QTimer
 import logging, serial
 
 import instrument
+from instrument import PacketFormat
 
 
 class Connection(QThread):
@@ -37,14 +38,14 @@ class Connection(QThread):
         self.old_data = None
         self.log.info("Connected: {0}".format(self.io_conn))
         
-        format = self.instrument.packet_format
-        if format.FORMAT_END_BYTES in format.rx_format:
+        format = instrument.packet_format
+        if format.FormatField.end_bytes in format.rx_format:
             self.buffer_size = self.DEFAULT_BUFFER_SIZE
         else:
             # suppose all packets of the same length as there's no end mark
             packet = instrument.rx_packets.values()[0]
             self.buffer_size = packet.struct.size # struct added by parser
-            if format.FORMAT_PACKET_NUM in format.rx_format:
+            if PacketFormat.FormatField.packet_num in format.rx_format:
                 self.buffer_size += 1
         
         self.start()
@@ -67,7 +68,7 @@ class Connection(QThread):
             if not self.packet:
                 if self.old_data:
                     data = self.old_data + data
-                if format.FORMAT_START_BYTES in format.rx_format:
+                if PacketFormat.FormatField.start_bytes in format.rx_format:
                     for i in xrange(len(data) - len(format.start_bytes) + 1):
                         if data[i:i + len(format.start_bytes)] == bytearray(format.start_bytes):
                             self.packet += data[len(format.start_bytes) + i:]
@@ -77,7 +78,7 @@ class Connection(QThread):
             else:
                 self.packet += data
             
-            if format.FORMAT_END_BYTES in format.rx_format:
+            if PacketFormat.FormatField.end_bytes in format.rx_format:
                 for i in xrange(len(data) - len(format.end_bytes) + 1):
                     if data[-i - len(format.end_bytes):-i] == bytearray(format.end_bytes):
                         self.new_data_received.emit(self.packet[:-i - len(format.end_bytes)])
