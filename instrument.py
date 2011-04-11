@@ -22,7 +22,7 @@ class Instrument(object):
         self.name = "New Instrument"
         self.byte_order = "big-endian"
         
-        self.connection = Connection()
+        self.connection = ConnectionCfg.create()
         self.packet_format = PacketFormat()
         self.rx_packets  = {}
         self.tx_packets = {}
@@ -36,7 +36,7 @@ class Instrument(object):
         self.name = instr['name']
         self.byte_order = instr['byte_order']
         
-        self.connection = Connection(instr['connection'])
+        self.connection = ConnectionCfg.create(instr['connection'])
         
         self.packet_format = PacketFormat(instr['packet_format'])
         
@@ -54,6 +54,10 @@ class Instrument(object):
             return self.BYTE_ORDER_CHAR[self.byte_order]
         else:
             return ''
+    
+    def set_conn_type(self, type):
+        if self.connection.type != type:
+            self.connection = ConnectionCfg.create(type)
     
     def add_packet(self, num, type):
         packet = Packet()
@@ -102,55 +106,89 @@ class Instrument(object):
             raise NotImplementedError
     
 
-class Connection(object):
+class ConnectionCfg(object):
     
     # Connection types
     class Type:
         serial = "Serial"
         file = "File"
-    
-    def __init__(self,  conn=None):
-        self._type = Connection.Type.serial
+
+    @staticmethod
+    def create(conn=None, *args, **kwds):
         if conn:
-            self.port = conn['port']
+            try:
+                if type(conn) is dict:
+                    conn_type = conn['type']
+                elif type(conn) is str:
+                    conn_type = conn
+                else:
+                    raise Exception('Unknown parameter type "{0}"'.format(type(conn)))
+            except KeyError:
+                raise Exception('No connection type supplied')
+                
+            else:
+                connection = {
+                    ConnectionCfg.Type.serial: SerialConnectionCfg,
+                    ConnectionCfg.Type.file:     FileConnectionCfg
+                }.get(conn_type, None)
+                
+                if not connection:
+                    raise Exception('Connection type "{0}" not implemented'.format(conn_type))
+        
+        else:
+            # serial connection as default type
+            connection = SerialConnectionCfg
+        
+        return connection(conn, *args, **kwds)
+    
+    def __init__(self, conn=None):
+        # ConnectionCfg can't be initialized, use factory method create()
+        raise NotImplementedError
+
+
+class SerialConnectionCfg(ConnectionCfg):
+    
+    def __init__(self, conn):
+        self.type = ConnectionCfg.Type.serial
+        if conn and type(conn) is dict:
+            self.serial_port = conn['port']
             self.baudrate = conn['baudrate']
             self.data_bits = conn['data_bits']
             self.parity = conn['parity']
             self.stop_bits = conn['stop_bits']
         else:
-            # Defaults
-            self.port = "/dev/ttyS0"
+            # load defaults
+            self.serial_port = "/dev/ttyS0"
             self.baudrate = 9600
             self.data_bits = 8
             self.parity = 'N'
             self.stop_bits = 1
     
-    @property
-    def type(self):
-        """Type of this connection instance."""
-        return self._type
-    
-    @type.setter
-    def type(self, value):
-        type = {
-            Connection.Type.serial: Connection.Type.serial, 
-            Connection.Type.file: Connection.Type.file
-        }.get(value, None)
-        
-        if not type:
-            raise ValueError("Unknown connection type: {0}".format(value))
-        else:
-            _type = type
-    
     def dump(self):
-        return {
+            return {
                     'type': self.type, 
-                    'port': self.port, 
+                    'port': self.serial_port, 
                     'baudrate': self.baudrate, 
                     'data_bits': self.data_bits, 
                     'parity': self.parity, 
                     'stop_bits': self.stop_bits
                 }
+
+
+class FileConnectionCfg(ConnectionCfg):
+    
+    def __init__(self, conn):
+        self.type = ConnectionCfg.Type.file
+        if conn and type(conn) is dict:
+            self.filename = conn['filename']
+        else:
+            self.filename = ''
+    
+    def dump(self):
+        return {
+                'type': self.type, 
+                'filename': self.filename
+            }
 
 
 class PacketFormat(object):

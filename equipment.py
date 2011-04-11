@@ -74,13 +74,13 @@ class InstrumentConfig(object):
     def __init__(self,  instr):
         self.log = logging.getLogger('GDAIS.InstrumentConfig')
         
-        if type(instr) is type(''): # str
+        if type(instr) is str:
             self.instrument = Instrument(instr)
             self.init_commands = []
             self._operation_mode = self.DEFAULT_OPERATION_MODE
             self.operation_commands = []
         
-        elif type(instr) is type({}): # dict
+        elif type(instr) is dict:
             self.instrument = Instrument(instr['filename'])
             
             self.init_commands = []
@@ -167,11 +167,11 @@ class Command(object):
     def __init__(self,  cmd):
         self.name = ''
         
-        if type(cmd) is type(0): # int
+        if type(cmd) is int:
             self.id = cmd
             self.values = []
         
-        elif type(cmd) is type({}): #dict
+        elif type(cmd) is dict:
             self.id = cmd['id']
             self.values = cmd['values']
     
@@ -186,11 +186,11 @@ class Command(object):
 class InitCommand(Command):
     
     def __init__(self, init_command, reply=None):
-        if type(init_command) is type(0): # int
+        if type(init_command) is int:
             Command.__init__(self, init_command)
             self.reply = Command(reply)
         
-        elif type(init_command) is type({}): #dict
+        elif type(init_command) is dict:
             Command.__init__(self, init_command['command'])
             self.reply = Command(init_command['reply'])
     
@@ -216,17 +216,17 @@ class OperationCommand(Command):
                             },
         InstrumentConfig.OperationMode.blocking: {
                                 'pre_txt': 'Repeat',
-                                'param': 5,  
-                                'post_txt': 'times'
+                                'param': 1,  
+                                'post_txt': 'time(s)'
                             }
                 }
     
     def __init__(self,  operation_command, operation_mode):
-        if type(operation_command) is type(0): # int
+        if type(operation_command) is int:
             Command.__init__(self, operation_command)
             self.param = self.DEFAULTS[operation_mode]['param']
         
-        elif type(operation_command) is type({}): #dict
+        elif type(operation_command) is dict:
             Command.__init__(self, operation_command['command'])
             self.param = operation_command['param']
     

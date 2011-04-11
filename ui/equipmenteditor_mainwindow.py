@@ -58,7 +58,7 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
     def on_action_Save_triggered(self):
         filename = self.equipment.filename
         if not filename:
-            filename = QFileDialog.getOpenFileName(
+            filename = QFileDialog.getSaveFileName(
                                                 None,
                                                 self.trUtf8("Save equipment description file"),
                                                 QString(self.EQUIPMENT_PATH),
@@ -70,7 +70,7 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
     
     @pyqtSignature("")
     def on_action_Save_As_triggered(self):
-        filename = QFileDialog.getOpenFileName(
+        filename = QFileDialog.getSaveFileName(
                                             None,
                                             self.trUtf8("Save equipment description file"),
                                             QString(self.EQUIPMENT_PATH),
@@ -110,7 +110,7 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
         if filename:
             try:
                 import os # save relative instrument file path
-                rel_filename = filename[len(os.getcwd())+1:]
+                rel_filename = os.path.relpath(str(filename))
                 short_name = self.equipment.add_instrument_config(str(rel_filename))
             except InstrumentConfigAlreadyExistsError:
                 QMessageBox.warning(None,
