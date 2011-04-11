@@ -2,7 +2,7 @@
   "name": "Receptor GPS", 
   "short_name": "receptor_gps", 
   "connection": {
-    "type": "serial",
+    "type": "Serial",
     "port": "/dev/ttyS0",
     "baudrate": 9600,
     "data_bits": 8,

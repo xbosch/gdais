@@ -289,6 +289,9 @@
               </item>
               <item>
                <widget class="QTreeWidget" name="init_command_values">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="rootIsDecorated">
                  <bool>false</bool>
                 </property>
@@ -324,7 +327,11 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QComboBox" name="init_command_reply"/>
+                 <widget class="QComboBox" name="init_command_reply">
+                  <property name="enabled">
+                   <bool>false</bool>
+                  </property>
+                 </widget>
                 </item>
                 <item>
                  <spacer name="horizontalSpacer_7">
@@ -343,6 +350,9 @@
               </item>
               <item>
                <widget class="QTreeWidget" name="init_command_reply_values">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="rootIsDecorated">
                  <bool>false</bool>
                 </property>
@@ -516,6 +526,9 @@
                   </item>
                   <item>
                    <widget class="QLineEdit" name="operation_command_param">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
                     <property name="maximumSize">
                      <size>
                       <width>100</width>
@@ -548,6 +561,9 @@
                 </item>
                 <item>
                  <widget class="QTreeWidget" name="operation_command_values">
+                  <property name="enabled">
+                   <bool>false</bool>
+                  </property>
                   <property name="rootIsDecorated">
                    <bool>false</bool>
                   </property>

@@ -10,7 +10,7 @@ from PyQt4.QtCore import pyqtSignature, QString, Qt
 import os
 
 from Ui_instrumenteditor_mainwindow import Ui_InstrumentEditorMainWindow
-from instrument import Field, Instrument, PacketFormat
+from instrument import ConnectionCfg, Field, Instrument, PacketFormat
 from instrument import PacketAlreadyExistsError, WrongPacketTypeError
 
 class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
@@ -34,16 +34,10 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
     
     @pyqtSignature("")
     def on_action_New_triggered(self):
-        """
-        Slot documentation goes here.
-        """
         self.load_instrument(Instrument())
     
     @pyqtSignature("")
     def on_action_Open_triggered(self):
-        """
-        Slot documentation goes here.
-        """
         filename = QFileDialog.getOpenFileName(
                                             None,
                                             self.trUtf8("Select an instrument description file"),
@@ -55,12 +49,9 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
     
     @pyqtSignature("")
     def on_action_Save_triggered(self):
-        """
-        Slot documentation goes here.
-        """
         filename = self.instrument.filename
         if not filename:
-            filename = QFileDialog.getOpenFileName(
+            filename = QFileDialog.getSaveFileName(
                                                 None,
                                                 self.trUtf8("Save instrument description file"),
                                                 QString(self.INSTRUMENT_PATH),
@@ -72,10 +63,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
     
     @pyqtSignature("")
     def on_action_Save_As_triggered(self):
-        """
-        Slot documentation goes here.
-        """
-        filename = QFileDialog.getOpenFileName(
+        filename = QFileDialog.getSaveFileName(
                                             None,
                                             self.trUtf8("Save instrument description file"),
                                             QString(self.INSTRUMENT_PATH),
@@ -87,16 +75,25 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
     
     @pyqtSignature("")
     def on_action_About_triggered(self):
-        """
-        Slot documentation goes here.
-        """
         QMessageBox.information(self, "About", "GUI for editing Instrument descriptions in JSON.")
+    
+    @pyqtSignature("QString")
+    def on_conn_type_currentIndexChanged(self, type):
+        self.instrument.set_conn_type(str(type))
+        self.load_connection()
+    
+    @pyqtSignature("")
+    def on_conn_file_name_btn_clicked(self):
+        filename = QFileDialog.getOpenFileName(
+                                            None,
+                                            self.trUtf8("Instrument input data file"),
+                                            self.conn_file_name.text(),
+                                            self.trUtf8(''),
+                                            None)
+        self.conn_file_name.setText(filename)
     
     @pyqtSignature("")
     def on_pf_add_start_byte_clicked(self):
-        """
-        Slot documentation goes here.
-        """
         (text, ok) = QInputDialog.getText(\
             self,
             self.trUtf8("Start byte"),
@@ -110,17 +107,11 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
     
     @pyqtSignature("")
     def on_pf_delete_start_byte_clicked(self):
-        """
-        Slot documentation goes here.
-        """
         self.pf_start_bytes.takeItem(self.pf_start_bytes.currentRow())
         #TODO: consider deletion of last item
     
     @pyqtSignature("QListWidgetItem*, QListWidgetItem*")
     def on_pf_start_bytes_currentItemChanged(self, current, previous):
-        """
-        Slot documentation goes here.
-        """
         if not previous:
             self.pf_delete_start_byte.setEnabled(True)
             # TODO: when the list area is clicked on no item delete is also enabled!
@@ -129,9 +120,6 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
     
     @pyqtSignature("")
     def on_pf_add_end_byte_clicked(self):
-        """
-        Slot documentation goes here.
-        """
         (text, ok) = QInputDialog.getText(\
             self,
             self.trUtf8("End byte"),
@@ -145,17 +133,11 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
     
     @pyqtSignature("")
     def on_pf_delete_end_byte_clicked(self):
-        """
-        Slot documentation goes here.
-        """
         self.pf_end_bytes.takeItem(self.pf_end_bytes.currentRow())
         #TODO: consider deletion last item
     
     @pyqtSignature("QListWidgetItem*, QListWidgetItem*")
     def on_pf_end_bytes_currentItemChanged(self, current, previous):
-        """
-        Slot documentation goes here.
-        """
         if not previous:
             self.pf_delete_end_byte.setEnabled(True)
             # TODO: when the list area is clicked on no item delete is also enabled!
@@ -164,9 +146,6 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
     
     @pyqtSignature("QListWidgetItem*, QListWidgetItem*")
     def on_rx_packets_list_currentItemChanged(self, current, previous):
-        """
-        Slot documentation goes here.
-        """
         if previous:
             self.save_packet(str(previous.text()), self.instrument.RX_PACKET)
         else:
@@ -179,9 +158,6 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
     
     @pyqtSignature("")
     def on_rx_packets_add_clicked(self):
-        """
-        Slot documentation goes here.
-        """
         (text, ok) = QInputDialog.getText(\
             self,
             self.trUtf8("New Rx Packet"),
@@ -205,18 +181,12 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
     
     @pyqtSignature("")
     def on_rx_packets_delete_clicked(self):
-        """
-        Slot documentation goes here.
-        """
         num = str(self.rx_packets_list.currentItem().text())
         self.rx_packets_list.takeItem(self.rx_packets_list.currentRow())
         self.instrument.delete_packet(int(num), self.instrument.RX_PACKET)
     
     @pyqtSignature("QTreeWidgetItem*, QTreeWidgetItem*")
     def on_rx_packets_fields_currentItemChanged(self, current, previous):
-        """
-        Slot documentation goes here.
-        """
         if not previous:
             self.rx_packets_delete_field.setEnabled(True)
             # TODO: when the list area is clicked on no item delete is also enabled!
@@ -225,18 +195,12 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
     
     @pyqtSignature("")
     def on_rx_packets_add_field_clicked(self):
-        """
-        Slot documentation goes here.
-        """
         item = QTreeWidgetItem([Field.EMPTY_FIELD, "uint8"])
         item.setFlags(item.flags() | Qt.ItemIsEditable)
         self.rx_packets_fields.addTopLevelItem(item)
     
     @pyqtSignature("")
     def on_rx_packets_delete_field_clicked(self):
-        """
-        Slot documentation goes here.
-        """
         item = self.rx_packets_fields.currentItem()
         index = self.rx_packets_fields.indexOfTopLevelItem(item)
         self.rx_packets_fields.takeTopLevelItem(index)
@@ -244,9 +208,6 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
     
     @pyqtSignature("QListWidgetItem*, QListWidgetItem*")
     def on_tx_packets_list_currentItemChanged(self, current, previous):
-        """
-        Slot documentation goes here.
-        """
         if previous:
             self.save_packet(str(previous.text()), self.instrument.TX_PACKET)
         else:
@@ -259,9 +220,6 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
     
     @pyqtSignature("")
     def on_tx_packets_add_clicked(self):
-        """
-        Slot documentation goes here.
-        """
         (text, ok) = QInputDialog.getText(\
             self,
             self.trUtf8("New Tx Packet"),
@@ -285,18 +243,12 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
     
     @pyqtSignature("")
     def on_tx_packets_delete_clicked(self):
-        """
-        Slot documentation goes here.
-        """
         num = str(self.tx_packets_list.currentItem().text())
         self.tx_packets_list.takeItem(self.tx_packets_list.currentRow())
         self.instrument.delete_packet(int(num), self.instrument.TX_PACKET)
     
     @pyqtSignature("QTreeWidgetItem*, QTreeWidgetItem*")
     def on_tx_packets_fields_currentItemChanged(self, current, previous):
-        """
-        Slot documentation goes here.
-        """
         if not previous:
             self.tx_packets_delete_field.setEnabled(True)
             # TODO: when the list area is clicked on no item delete is also enabled!
@@ -305,18 +257,12 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
     
     @pyqtSignature("")
     def on_tx_packets_add_field_clicked(self):
-        """
-        Slot documentation goes here.
-        """
         item = QTreeWidgetItem([Field.EMPTY_FIELD, "uint8"])
         item.setFlags(item.flags() | Qt.ItemIsEditable)
         self.tx_packets_fields.addTopLevelItem(item)
     
     @pyqtSignature("")
     def on_tx_packets_delete_field_clicked(self):
-        """
-        Slot documentation goes here.
-        """
         item = self.tx_packets_fields.currentItem()
         index = self.tx_packets_fields.indexOfTopLevelItem(item)
         self.tx_packets_fields.takeTopLevelItem(index)
@@ -366,6 +312,47 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         else:
             raise WrongPacketTypeError(type)
 
+    def load_connection(self):
+        self.clear_connection()
+        
+        conn = self.instrument.connection
+        
+        if conn.type == ConnectionCfg.Type.serial:
+            self.conn_serial_group.setEnabled(True)
+            self.conn_serial_port.setText(conn.serial_port)
+            self.conn_serial_baudrate.setText(str(conn.baudrate))
+            self.conn_serial_data_bits.setText(str(conn.data_bits))
+            self.conn_serial_parity.setText(conn.parity)
+            self.conn_serial_stop_bits.setText(str(conn.stop_bits))
+            
+        elif conn.type == ConnectionCfg.Type.file:
+            self.conn_file_group.setEnabled(True)
+            self.conn_file_name.setText(conn.filename)
+    
+    def clear_connection(self):
+        self.conn_serial_group.setEnabled(False)
+        self.conn_serial_port.setText('')
+        self.conn_serial_baudrate.setText('')
+        self.conn_serial_data_bits.setText('')
+        self.conn_serial_parity.setText('')
+        self.conn_serial_stop_bits.setText('')
+        
+        self.conn_file_group.setEnabled(False)
+        self.conn_file_name.setText('')
+    
+    def save_connection(self):
+        conn = self.instrument.connection
+        
+        if conn.type == ConnectionCfg.Type.serial:
+            conn.serial_port = str(self.conn_serial_port.text())
+            conn.baudrate = int(self.conn_serial_baudrate.text())
+            conn.data_bits = int(self.conn_serial_data_bits.text())
+            conn.parity = str(self.conn_serial_parity.text())
+            conn.stop_bits = int(self.conn_serial_stop_bits.text())
+            
+        elif conn.type == ConnectionCfg.Type.file:
+            conn.filename = str(self.conn_file_name.text())
+
     def load_instrument(self, instrument):
         self.clear_instrument()
         
@@ -378,11 +365,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         
         # connection
         self.conn_type.setCurrentIndex(self.conn_type.findText(self.instrument.connection.type))
-        self.conn_port.setText(self.instrument.connection.port)
-        self.conn_baudrate.setText(str(self.instrument.connection.baudrate))
-        self.conn_data_bits.setText(str(self.instrument.connection.data_bits))
-        self.conn_parity.setText(self.instrument.connection.parity)
-        self.conn_stop_bits.setText(str(self.instrument.connection.stop_bits))
+        self.load_connection()
         
         # packet format
         for i, field in enumerate(self.instrument.packet_format.rx_format):
@@ -416,6 +399,8 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
             self.tx_packets_list.setCurrentItem(self.tx_packets_list.item(0))
     
     def clear_instrument(self):
+        self.clear_connection()
+        
         none_index = 4 # TODO: improve
         for i in range(4):
             getattr(self, 'pf_rx_format_{0}'.format(i)).setCurrentIndex(none_index)
@@ -441,12 +426,8 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         self.instrument.short_name = str(self.instrument_short_name.text())
         self.instrument.byte_order = str(self.byte_order.currentText())
         
-        self.instrument.connection.type = str(self.conn_type.currentText())
-        self.instrument.connection.port = str(self.conn_port.text())
-        self.instrument.connection.baudrate = int(self.conn_baudrate.text())
-        self.instrument.connection.data_bits = int(self.conn_data_bits.text())
-        self.instrument.connection.parity = str(self.conn_parity.text())
-        self.instrument.connection.stop_bits = int(self.conn_stop_bits.text())
+        #connection
+        self.save_connection()
         
         # packet format
         self.instrument.packet_format.rx_format = []

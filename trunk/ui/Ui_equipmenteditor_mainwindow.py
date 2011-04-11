@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/home/pau/feina/UPC/projecte/code/GDAIS/ui/equipmenteditor_mainwindow.ui'
 #
-# Created: Wed Mar 23 14:00:28 2011
+# Created: Mon Apr  4 11:42:09 2011
 #      by: PyQt4 UI code generator 4.8.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -130,6 +130,7 @@ class Ui_EquipmentEditorMainWindow(object):
         self.horizontalLayout_8.addItem(spacerItem6)
         self.verticalLayout_2.addLayout(self.horizontalLayout_8)
         self.init_command_values = QtGui.QTreeWidget(self.init_commands_tab)
+        self.init_command_values.setEnabled(False)
         self.init_command_values.setRootIsDecorated(False)
         self.init_command_values.setObjectName(_fromUtf8("init_command_values"))
         self.init_command_values.header().setDefaultSectionSize(250)
@@ -145,12 +146,14 @@ class Ui_EquipmentEditorMainWindow(object):
         self.label_5.setObjectName(_fromUtf8("label_5"))
         self.horizontalLayout.addWidget(self.label_5)
         self.init_command_reply = QtGui.QComboBox(self.init_commands_tab)
+        self.init_command_reply.setEnabled(False)
         self.init_command_reply.setObjectName(_fromUtf8("init_command_reply"))
         self.horizontalLayout.addWidget(self.init_command_reply)
         spacerItem7 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem7)
         self.verticalLayout_2.addLayout(self.horizontalLayout)
         self.init_command_reply_values = QtGui.QTreeWidget(self.init_commands_tab)
+        self.init_command_reply_values.setEnabled(False)
         self.init_command_reply_values.setRootIsDecorated(False)
         self.init_command_reply_values.setObjectName(_fromUtf8("init_command_reply_values"))
         self.init_command_reply_values.header().setDefaultSectionSize(250)
@@ -220,6 +223,7 @@ class Ui_EquipmentEditorMainWindow(object):
         self.operation_command_param_pre_txt.setObjectName(_fromUtf8("operation_command_param_pre_txt"))
         self.horizontalLayout_2.addWidget(self.operation_command_param_pre_txt)
         self.operation_command_param = QtGui.QLineEdit(self.operation_mode_tab)
+        self.operation_command_param.setEnabled(False)
         self.operation_command_param.setMaximumSize(QtCore.QSize(100, 16777215))
         self.operation_command_param.setObjectName(_fromUtf8("operation_command_param"))
         self.horizontalLayout_2.addWidget(self.operation_command_param)
@@ -230,6 +234,7 @@ class Ui_EquipmentEditorMainWindow(object):
         self.horizontalLayout_2.addItem(spacerItem11)
         self.verticalLayout.addLayout(self.horizontalLayout_2)
         self.operation_command_values = QtGui.QTreeWidget(self.operation_mode_tab)
+        self.operation_command_values.setEnabled(False)
         self.operation_command_values.setRootIsDecorated(False)
         self.operation_command_values.setObjectName(_fromUtf8("operation_command_values"))
         self.operation_command_values.header().setDefaultSectionSize(250)

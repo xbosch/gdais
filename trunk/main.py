@@ -38,7 +38,7 @@ class GDAIS(object):
                 instr_init.finished.connect(instr_ctrl.begin)
                 instr_init.begin()
             
-                # store the instrument controller instance
+                # store the init instrument controller instance
                 self.instrument_init_controllers.append(instr_init)
                 
             else:
@@ -82,11 +82,6 @@ class InstrumentController(QThread):
 
     # Signal for new command ready to send event
     new_command = pyqtSignal(Command)
-
-    def __init__(self, instrument_config):
-        QThread.__init__(self)
-        self.log = logging.getLogger('GDAIS.'+instrument_config.instrument.short_name)
-        self.instr_cfg = instrument_config
     
     @staticmethod
     def create(instrument_config, *args, **kwds):
@@ -102,9 +97,15 @@ class InstrumentController(QThread):
             raise Exception(txt.format(instrument_config.operation_mode))
 
         return controller(instrument_config, *args, **kwds)
+
+    def __init__(self, instrument_config):
+        QThread.__init__(self)
+        self.log = logging.getLogger('GDAIS.'+instrument_config.instrument.short_name)
+        self.instr_cfg = instrument_config
     
     def __del__(self):
         self.log.debug("Deleting InstrumentController thread")
+        QThread.__del__(self)
 
     def begin(self):
         self.log.info("Creating parser...")
