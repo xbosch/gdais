@@ -28,13 +28,6 @@ class Connection(QThread):
     
     def __init__(self):
         QThread.__init__(self)
-    
-    def __del__(self):
-        self.log.debug("Deleting connection thread")
-    
-    def begin(self,  instrument):
-        # instrument description
-        self.instrument = instrument
         
         # bytearray() to store received packet bytes
         self.packet = bytearray()
@@ -44,6 +37,16 @@ class Connection(QThread):
         
         # last position in self.packet checked for packet end
         self.last_index = 0
+        
+        # flag for exiting the read_data iteration
+        self.exiting = False
+    
+    def __del__(self):
+        self.log.debug("Deleting connection thread")
+    
+    def begin(self,  instrument):
+        # instrument description
+        self.instrument = instrument
         
         self.log.info("Connected: {0}".format(self.io_conn))
         
@@ -86,11 +89,13 @@ class Connection(QThread):
     
     def read_data(self, fd):
         format = self.instrument.packet_format
-        while True:
+        while not self.exiting:
             data = self.io_conn.read(self.buffer_size)
             if not data:
                 # continue reading until some data is read
                 break
+            
+            self.sleep(1)
             
             if not self.packet:
                 # starting a new packet, using the remaining data from previous packet
@@ -242,10 +247,10 @@ class FileConnection(Connection):
             self.io_conn.close()
         Connection.__del__(self)
 
-    def begin(self,  instrument, file_name):
+    def begin(self,  instrument):
         self.log = logging.getLogger("GDAIS."+instrument.short_name+".FileConnection")
         try:
-            self.io_conn = open(file_name,  'rb')
+            self.io_conn = open(instrument.connection.filename,  'rb')
         except IOError:
             self.log.exception("The file does not exist, exiting gracefully")
         else:
@@ -253,8 +258,11 @@ class FileConnection(Connection):
     
     def run(self):
         self.read_data(self.io_conn.fileno())
-        
         Connection.run(self)
+    
+    def quit(self):
+        self.exiting = True
+        Connection.quit(self)
     
     def send_data(self, data):
         # file connection can't send data

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/home/pau/feina/UPC/projecte/code/GDAIS/ui/instrumenteditor_mainwindow.ui'
 #
-# Created: Mon Apr 11 11:14:04 2011
+# Created: Thu Apr 14 10:48:02 2011
 #      by: PyQt4 UI code generator 4.8.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -17,7 +17,7 @@ except AttributeError:
 class Ui_InstrumentEditorMainWindow(object):
     def setupUi(self, InstrumentEditorMainWindow):
         InstrumentEditorMainWindow.setObjectName(_fromUtf8("InstrumentEditorMainWindow"))
-        InstrumentEditorMainWindow.resize(542, 648)
+        InstrumentEditorMainWindow.resize(502, 465)
         self.centralWidget = QtGui.QWidget(InstrumentEditorMainWindow)
         self.centralWidget.setObjectName(_fromUtf8("centralWidget"))
         self.verticalLayout = QtGui.QVBoxLayout(self.centralWidget)
@@ -254,7 +254,7 @@ class Ui_InstrumentEditorMainWindow(object):
         self.horizontalLayout_3.addWidget(self.pf_delete_start_byte)
         self.verticalLayout_2.addLayout(self.horizontalLayout_3)
         self.horizontalLayout_15.addLayout(self.verticalLayout_2)
-        spacerItem9 = QtGui.QSpacerItem(47, 50, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        spacerItem9 = QtGui.QSpacerItem(80, 50, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout_15.addItem(spacerItem9)
         self.verticalLayout_3 = QtGui.QVBoxLayout()
         self.verticalLayout_3.setObjectName(_fromUtf8("verticalLayout_3"))
@@ -457,7 +457,7 @@ class Ui_InstrumentEditorMainWindow(object):
         self.verticalLayout.addWidget(self.tabWidget)
         InstrumentEditorMainWindow.setCentralWidget(self.centralWidget)
         self.menuBar = QtGui.QMenuBar(InstrumentEditorMainWindow)
-        self.menuBar.setGeometry(QtCore.QRect(0, 0, 542, 23))
+        self.menuBar.setGeometry(QtCore.QRect(0, 0, 502, 23))
         self.menuBar.setObjectName(_fromUtf8("menuBar"))
         self.menuFile = QtGui.QMenu(self.menuBar)
         self.menuFile.setObjectName(_fromUtf8("menuFile"))

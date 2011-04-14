@@ -1,12 +1,6 @@
 {
  "instruments": [
   {
-   "operation_commands": [], 
-   "init_commands": [], 
-   "operation_mode": "Periodic Commands", 
-   "filename": "conf/instruments/gps.json"
-  }, 
-  {
    "operation_commands": [
     {
      "command": {
@@ -14,10 +8,39 @@
       "id": 17, 
       "name": "Request Compass Measure"
      }, 
-     "param": 1
+     "param": 3
+    }, 
+    {
+     "command": {
+      "values": [], 
+      "id": 18, 
+      "name": "Non-existent request"
+     }, 
+     "param": 2
     }
    ], 
-   "init_commands": [], 
+   "init_commands": [
+    {
+     "reply": {
+      "values": [
+       "0", 
+       "3", 
+       "0", 
+       "34", 
+       "0", 
+       "0", 
+       "0"
+      ], 
+      "id": 0, 
+      "name": "Compass Data"
+     }, 
+     "command": {
+      "values": [], 
+      "id": 17, 
+      "name": "Request Compass Measure"
+     }
+    }
+   ], 
    "operation_mode": "Blocking Sequences", 
    "filename": "conf/instruments/compass_f350.json"
   }
