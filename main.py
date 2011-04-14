@@ -102,10 +102,6 @@ class InstrumentController(QThread):
         QThread.__init__(self)
         self.log = logging.getLogger('GDAIS.'+instrument_config.instrument.short_name)
         self.instr_cfg = instrument_config
-    
-    def __del__(self):
-        self.log.debug("Deleting InstrumentController thread")
-        QThread.__del__(self)
 
     def begin(self):
         self.log.info("Creating parser...")
@@ -131,7 +127,7 @@ class InstrumentController(QThread):
 
     def run(self):
         self.exec_()
-    
+
     def quit(self):
         self.log.debug("Closing connection...")
         self.connection.quit()
@@ -143,6 +139,7 @@ class InstrumentController(QThread):
         self.parser.wait()
         del self.parser
         
+        self.log.debug("Ending InstrumentController thread")
         QThread.quit(self)
 
     def on_new_packet_parsed(self, packet):
