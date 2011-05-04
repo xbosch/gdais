@@ -29,6 +29,9 @@ class Connection(QThread):
     def __init__(self):
         QThread.__init__(self)
         
+        # I/O connection
+        self.io_conn = None
+        
         # bytearray() to store received packet bytes
         self.packet = bytearray()
         
@@ -40,6 +43,9 @@ class Connection(QThread):
         
         # flag for exiting the read_data iteration
         self.exiting = False
+        
+        # flag for when a new packet is found in the input buffer
+        self.packet_found = False
     
     def __del__(self):
         self.log.debug("Deleting connection thread")
@@ -53,22 +59,38 @@ class Connection(QThread):
         # input read buffer size
         self.buffer_size = self.DEFAULT_BUFFER_SIZE
         
+        # auxiliary variables used in data reception
         format = instrument.packet_format
-        if not PacketFormat.FormatField.end_bytes in format.rx_format and \
-            not PacketFormat.FormatField.start_bytes in format.rx_format and \
-            not PacketFormat.FormatField.packet_num in format.rx_format:
+        if (not PacketFormat.FormatField.end_bytes in format.rx_format and
+            not PacketFormat.FormatField.start_bytes in format.rx_format and
+            not PacketFormat.FormatField.packet_num in format.rx_format):
                 # suppose all packets of the same length
                 packet = instrument.rx_packets.values()[0]
                 self.buffer_size = packet.struct.size # struct added by parser
-        
-        # auxiliary variables used in data reception
-        if PacketFormat.FormatField.start_bytes in format.rx_format:
-            self.start_bytes = bytearray(format.start_bytes)
-            self.start_bytes_len = len(self.start_bytes)
+            
+        else:
+            if PacketFormat.FormatField.start_bytes in format.rx_format:
+                self.start_bytes = bytearray(format.start_bytes)
+                self.start_bytes_len = len(self.start_bytes)
 
+            if PacketFormat.FormatField.end_bytes in format.rx_format:
+                self.end_bytes = bytearray(format.end_bytes)
+                self.end_bytes_len = len(self.end_bytes)
+        
+        # auxiliary functions used in data reception
+        if PacketFormat.FormatField.start_bytes in format.rx_format:
+            self._find_packet_start = self._find_packet_start_mark
+        
         if PacketFormat.FormatField.end_bytes in format.rx_format:
-            self.end_bytes = bytearray(format.end_bytes)
-            self.end_bytes_len = len(self.end_bytes)
+            self._find_packet_end = self._find_packet_end_mark
+        elif PacketFormat.FormatField.start_bytes in format.rx_format:
+            if (PacketFormat.FormatField.packet_num in format.rx_format or
+                len(self.instrument.rx_packets) == 1):
+                self._find_packet_end = self._find_packet_end_next_start_or_len
+            else:
+                self._find_packet_end = self._find_packet_end_next_start
+        elif PacketFormat.FormatField.packet_num in format.rx_format:
+            self._find_packet_end = self._find_packet_end_len
         
         self.start()
     
@@ -78,14 +100,20 @@ class Connection(QThread):
     
     def send_data(self, data):
         format = self.instrument.packet_format
+        raw_data = bytearray()
         
         if PacketFormat.FormatField.start_bytes in format.tx_format:
-            self.io_conn.write(bytearray(format.start_bytes))
+            raw_data += bytearray(format.start_bytes)
         
-        self.io_conn.write(str(data))
+        raw_data += data
         
         if PacketFormat.FormatField.end_bytes in format.tx_format:
-            self.io_conn.write(bytearray(format.end_bytes))
+            raw_data += bytearray(format.end_bytes)
+        
+        txt_raw =  ' '.join(['0x{0:X}'.format(d) for d in raw_data])
+        self.log.debug("Sending Raw Data: {0}".format(txt_raw))
+        
+        self.io_conn.write(str(raw_data))
     
     def read_data(self, fd):
         format = self.instrument.packet_format
@@ -95,86 +123,168 @@ class Connection(QThread):
                 # continue reading until some data is read
                 break
             
-            self.sleep(1)
+            #TODO: used when reading from file
+            #self.sleep(1)
             
             if not self.packet:
                 # starting a new packet, using the remaining data from previous packet
                 if self.old_data:
                     data = self.old_data + data
-                if PacketFormat.FormatField.start_bytes in format.rx_format:
-                    # search for packet start bytes marker in input data
-                    for i in range(len(data) - self.start_bytes_len + 1):
-                        if data[i:i + self.start_bytes_len] == self.start_bytes:
-                            # packet start bytes found, append new data without start bytes
-                            data = data[i + self.start_bytes_len:]
-                            self.packet += data
-                            self.last_index = 0 # move index to the beginning of the packet
-                            break
-                else:
-                    # no start bytes mark, just use this data as the packet start
-                    self.packet += data
+                    self.old_data = None
+                self._find_packet_start(data)
             else:
                 # already started a packet, append new data
                 self.packet += data
             
             if self.packet:
-                if PacketFormat.FormatField.end_bytes in format.rx_format:
-                    # search for packet end bytes in input data
-                    for i in range(self.last_index, len(self.packet) - self.end_bytes_len + 1):
-                        if self.packet[i:i + self.end_bytes_len] == self.end_bytes:
-                            # Packet end bytes found, emit the new packet without end bytes,
-                            # store exceeding data and prepare for next packet
-                            self._new_packet_found(
-                                packet_data=self.packet[:i],
-                                excess_data=self.packet[i + self.end_bytes_len:]
-                            )
-                            break
-                            
-                        self.last_index += 1
-                    
-                elif PacketFormat.FormatField.start_bytes in format.rx_format:
-                    # As there is no end bytes marker but start bytes marker is defined,
-                    # try to find the start of the next packet and cut there
-                    for i in range(self.last_index, len(self.packet) - self.start_bytes_len + 1):
-                        if self.packet[i:i + self.start_bytes_len] == self.start_bytes:
-                            # next packet start bytes found, emit the new packet without end bytes,
-                            # store exceeding data and prepare for next packet
-                            self._new_packet_found(
-                                packet_data=self.packet[:i],
-                                excess_data=self.packet[i:]
-                            )
-                            break
-                            
-                        self.last_index += 1
-                    
-                elif PacketFormat.FormatField.packet_num in format.rx_format:
-                    # Having no end bytes marker nor start bytes marker, try to obtain
-                    # the data length from the instrument description using packet number
-                    if self.packet[0] in self.instrument.rx_packets:
-                        packet_len = self.instrument.rx_packets[self.packet[0]].struct.size
-                        packet_len += 1 # packet number
-                        if len(self.packet) >= packet_len:
-                            self._new_packet_found(
-                               packet_data=self.packet[:packet_len],
-                               excess_data=self.packet[packet_len:]
-                            )
-                        
-                    else:
-                        # Packet number not in list of known packets, emit the unidentified
-                        # packet and hope that the next packet will be recognized
-                        self._new_packet_found(
-                           packet_data=self.packet,
-                           excess_data=None
-                        )
-                    
-                else:
-                    # Without end bytes nor start bytes marker just try to get a fixed
-                    # length data bytes, store not used data and prepare for next packet
-                    if len(self.packet) >= self.buffer_size:
-                        self._new_packet_found(
-                           packet_data=self.packet[:self.buffer_size],
-                           excess_data=self.packet[self.buffer_size:]
-                        )
+                self._find_packet_end()
+            
+            if self.packet_found:
+                self.packet_found = False
+                break
+    
+    def _find_packet_start(self, data):
+        """Find a new packet start in the given data array.
+        
+        This is the default function for a new packet start. As it has no info
+        about packet format it just uses the given data as the beggining
+        of a new packet.
+        
+        See also: _find_packet_start_mark
+        """
+        self.packet += data
+    
+    def _find_packet_start_mark(self, data):
+        """Find a new packet start in the given data array, using a start mark.
+        
+        Search for packet start bytes marker in input data and, if found,
+        save it as the beginning of a new packet.
+        
+        See also: _find_packet_start
+        """
+        for i in range(len(data) - self.start_bytes_len + 1):
+            if data[i:i + self.start_bytes_len] == self.start_bytes:
+                # packet start bytes found, append new data without start bytes
+                self.packet += data[i + self.start_bytes_len:]
+                self.last_index = 0 # move index to the beginning of the packet
+                break
+    
+    def _find_packet_end(self):
+        """Find current packet end.
+        
+        This is the default function for packet end search. As it has no info
+        about packet format it just tries to get a fixed length of data bytes,
+        saves not used data and prepares for the next packet.
+        
+        See also: _find_packet_end_mark, _find_packet_end_len,
+                        _find_packet_end_next_start
+        """
+        if len(self.packet) >= self.buffer_size:
+            self._new_packet_found(
+               packet_data=self.packet[:self.buffer_size],
+               excess_data=self.packet[self.buffer_size:]
+            )
+    
+    def _find_packet_end_mark(self):
+        """Find current packet end, using end bytes mark.
+        
+        Search for packet end bytes mark in the current packet input data. If
+        found, emit the new packet without end bytes, save exceding data and
+        prepare for the next packet.
+        
+        See also: _find_packet_end
+        """
+        for i in range(self.last_index, len(self.packet) - self.end_bytes_len + 1):
+            if self.packet[i:i + self.end_bytes_len] == self.end_bytes:
+                self._new_packet_found(
+                    packet_data=self.packet[:i],
+                    excess_data=self.packet[i + self.end_bytes_len:]
+                )
+                break
+        self.last_index += i
+    
+    def _find_packet_end_next_start(self):
+        """Find current packet end, using next packet start bytes mark.
+        
+        Search for next packet start bytes mark in the current packet input
+        data. If found, emit the new packet, save exceding data and prepare for
+        the next packet.
+        
+        Note that this method will lock the system when the instrument sends
+        a single packet and waits for the next command, as then there will not
+        be any packet after the current one to be detected. In this case, it
+        would be better to use _find_packet_end_next_start_or_len method.
+        
+        See also: _find_packet_end, _find_packet_end_next_start_or_len
+        """
+        for i in range(self.last_index, len(self.packet) - self.start_bytes_len + 1):
+            if self.packet[i:i + self.start_bytes_len] == self.start_bytes:
+                self._new_packet_found(
+                    packet_data=self.packet[:i],
+                    excess_data=self.packet[i:]
+                )
+                break
+        self.last_index += i
+    
+    def _find_packet_end_len(self):
+        """Find current packet end, using its length.
+        
+        Get expected packet length from the instrument information, using the
+        current packet first byte as the packet number. If the current packet
+        data length is enough, emit the new packet, save exceding data and
+        prepare for the next packet.
+        
+        If the packet number is not in the instrument's packet list, but there
+        is only one packet defined, use its lenght. In other cases, emit the
+        current data as a new package and wait for the next one.
+        
+        Note that this method may lock the system when it is waiting for a
+        reply but some bytes are lost and the instrument does not send more
+        data. If packet format includes start bytes, it would be better to use
+        _find_packet_end_next_start_or_len method.
+        
+        See also: _find_packet_end, _find_packet_end_next_start_or_len
+        """
+        if self.packet[0] in self.instrument.rx_packets:
+            packet_len = self.instrument.rx_packets[self.packet[0]].struct.size
+            packet_len += 1 # packet number
+            if len(self.packet) >= packet_len:
+                self._new_packet_found(
+                   packet_data=self.packet[:packet_len],
+                   excess_data=self.packet[packet_len:]
+                )
+        elif len(self.instrument.rx_packets) == 1:
+            # In case of having only a packet defined, we can know directly
+            # its length, even if there is no packet number to identify it
+            packet_len = self.instrument.rx_packets.values()[0].struct.size
+            if PacketFormat.FormatField.packet_num in format.rx_format:
+                packet_len += 1 # packet number
+            if len(self.packet) >= packet_len:
+                self._new_packet_found(
+                   packet_data=self.packet[:packet_len],
+                   excess_data=self.packet[packet_len:]
+                )
+        else:
+            # Packet number not in list of known packets, emit the unidentified
+            # packet and hope that the next packet will be recognized
+            self._new_packet_found(
+               packet_data=self.packet,
+               excess_data=None
+            )
+    
+    def _find_packet_end_next_start_or_len(self):
+        """Find current packet end, using start bytes mark or the length.
+        
+        Check if there is a new packet in the current input data bytes, first
+        searching for next packet start bytes and, if it is not found, using
+        the packet length if the packet number is known.
+        
+        See also: _find_packet_end, _find_packet_end_next_start,
+                        _find_packet_end_len
+        """
+        self._find_packet_end_next_start()
+        if not self.packet_found:
+            self._find_packet_end_len()
     
     def _new_packet_found(self, packet_data, excess_data):
         # emit the new packet data
@@ -183,6 +293,9 @@ class Connection(QThread):
         # store not used data and prepare for next packet
         self.old_data = excess_data
         self.packet = bytearray('')
+        
+        # set new packet found flag
+        self.packet_found = True
 
 
 class SerialConnection(Connection):

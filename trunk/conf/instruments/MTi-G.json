@@ -97,42 +97,18 @@
     }, 
     {
      "type": "float32", 
-     "name": "Rotation Matrix a"
+     "name": "Roll"
     }, 
     {
      "type": "float32", 
-     "name": "Rotation Matrix b"
+     "name": "Pitch"
     }, 
     {
      "type": "float32", 
-     "name": "Rotation Matrix c"
-    }, 
+     "name": "Yaw"
+    },
     {
-     "type": "float32", 
-     "name": "Rotation Matrix d"
-    }, 
-    {
-     "type": "float32", 
-     "name": "Rotation Matrix e"
-    }, 
-    {
-     "type": "float32", 
-     "name": "Rotation Matrix f"
-    }, 
-    {
-     "type": "float32", 
-     "name": "Rotation Matrix g"
-    }, 
-    {
-     "type": "float32", 
-     "name": "Rotation Matrix h"
-    }, 
-    {
-     "type": "float32", 
-     "name": "Rotation Matrix i"
-    }, 
-    {
-     "type": "float32", 
+     "type": "uint16", 
      "name": "Analog input 1"
     }, 
     {
@@ -158,11 +134,7 @@
     {
      "type": "float32", 
      "name": "Velocity Z"
-    }, 
-    {
-     "type": "uint8", 
-     "name": "Status byte"
-    }, 
+    },
     {
      "type": "uint8", 
      "name": "checksum"
