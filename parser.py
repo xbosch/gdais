@@ -10,7 +10,8 @@ class ParsedPacket(object):
         self.raw_data = raw_data
         self.instrument_packet = packet
         self.data = parsed_data
-        self.info = ""
+        self.info = ''
+        self.log = logging.getLogger('GDAIS.Parser')
 
 
 class Parser(QThread):
@@ -52,7 +53,10 @@ class Parser(QThread):
         data = bytearray()
         if PacketFormat.FormatField.packet_num in self.packet_format.tx_format:
             data.append(command.id)
-        data.extend(packet.struct.pack(*command.values))
+        # TODO: should know values type and convert them correctly
+        values = map(int, command.values)
+        data.extend(packet.struct.pack(*values))
+        
         self.new_data_ready.emit(data)
 
     def on_new_data_received(self, raw_data):
