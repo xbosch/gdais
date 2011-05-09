@@ -13,9 +13,11 @@ class Recorder(QThread):
 
     def __init__(self):
         QThread.__init__(self)
+        self.h5file = None
     
     def __del__(self):
-        self.h5file.close()
+        if self.h5file:
+            self.h5file.close()
 
     def begin(self, equipment):
         dir = self.DATA_PATH + equipment.short_name
@@ -43,6 +45,11 @@ class Recorder(QThread):
 
     def run(self):
         self.exec_()
+    
+    def quit(self):
+        if self.h5file:
+            self.h5file.close()
+        QThread.quit(self)
     
     def on_new_packet(self,  packet):
         if packet.data:

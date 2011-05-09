@@ -24,6 +24,12 @@ class Parser(QThread):
     
     def __init__(self):
         QThread.__init__(self)
+        
+        # Flag to control when quit has been called and stop processing new signals
+        self.exiting = False
+        
+        # Default logger
+        self.log = logging.getLogger('GDAIS.Parser')
     
     def __del__(self):
         self.log.debug("Deleting parser thread")
@@ -47,17 +53,25 @@ class Parser(QThread):
         self.exec_()
         self.log.debug("Ending parser thread")
     
+    def quit(self):
+        self.exiting = True
+        QThread.quit(self)
+    
     def on_new_command(self, command):
-        self.log.debug("Sending '{0}' command (0x{1:X})".format(command.name, command.id))
-        packet = self.tx_packets[command.id]
-        data = bytearray()
-        if PacketFormat.FormatField.packet_num in self.packet_format.tx_format:
-            data.append(command.id)
-        # TODO: should know values type and convert them correctly
-        values = map(int, command.values)
-        data.extend(packet.struct.pack(*values))
+        if not self.exiting:
+            self.log.debug("Sending '{0}' command (0x{1:X})".format(command.name, command.id))
+            packet = self.tx_packets[command.id]
+            data = bytearray()
+            if PacketFormat.FormatField.packet_num in self.packet_format.tx_format:
+                data.append(command.id)
+            # TODO: should know values type and convert them correctly
+            values = map(int, command.values)
+            data.extend(packet.struct.pack(*values))
+            
+            self.new_data_ready.emit(data)
         
-        self.new_data_ready.emit(data)
+        else:
+            self.log.error("Received new command while exiting")
 
     def on_new_data_received(self, raw_data):
         if raw_data:

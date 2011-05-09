@@ -12,6 +12,9 @@ class Connection(QThread):
     
     # Signal for new data packet received event
     new_data_received = pyqtSignal(bytearray)
+    
+    # Signal for new data packet received event
+    error_occurred = pyqtSignal()
 
     @staticmethod
     def create(conn, *args, **kwds):
@@ -46,6 +49,9 @@ class Connection(QThread):
         
         # flag for when a new packet is found in the input buffer
         self.packet_found = False
+        
+        # default logger
+        self.log = logging.getLogger('GDAIS.Connection')
     
     def __del__(self):
         self.log.debug("Deleting connection thread")
@@ -320,7 +326,7 @@ class SerialConnection(Connection):
                 }
     
     def __del__(self):
-        if self.io_conn:
+        if self.io_conn and self.io_conn.isOpen():
             self.log.debug("Clearing serial port buffers (In and Out)")
             self.io_conn.flushOutput()
             self.io_conn.flushInput()
@@ -341,7 +347,8 @@ class SerialConnection(Connection):
         try:
             self.io_conn.open()
         except serial.SerialException:
-            self.log.exception("Device can not be found or can not be configured")
+            self.log.exception("Serial device can not be found or configured")
+            self.error_occurred.emit()
         else:
             Connection.begin(self, instrument)
     
@@ -365,7 +372,8 @@ class FileConnection(Connection):
         try:
             self.io_conn = open(instrument.connection.filename,  'rb')
         except IOError:
-            self.log.exception("The file does not exist, exiting gracefully")
+            self.log.exception("The input file does not exist")
+            self.error_occurred.emit()
         else:
             Connection.begin(self, instrument)
     

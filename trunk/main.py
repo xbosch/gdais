@@ -18,6 +18,8 @@ class GDAIS(object):
                             stream=sys.stdout)
         self.log = logging.getLogger("GDAIS")
         self.log.info("Welcome to GDAIS!")
+        
+        self.exiting = False
 
     def start(self, filename):
         equipment = Equipment(filename)
@@ -28,35 +30,68 @@ class GDAIS(object):
         self.instrument_init_controllers = []
         self.instrument_controllers = []
         for instrument_config in equipment.instruments:
-            # create instrument controller
-            instr_ctrl = InstrumentController.create(instrument_config)
-            instr_ctrl.new_packet.connect(self.recorder.on_new_packet)
-
-            # initialize instrument if needed
-            if instrument_config.init_commands:
-                instr_init = InstrumentInitialization(instrument_config)
-                instr_init.initialization_error_ocurred.connect(self.quit)
-                instr_init.finished.connect(instr_ctrl.begin)
-                instr_init.begin()
-            
-                # store the init instrument controller instance
-                self.instrument_init_controllers.append(instr_init)
+            if not self.exiting:
+                # create instrument controller
+                instr_ctrl = InstrumentController.create(instrument_config)
+                instr_ctrl.new_packet.connect(self.recorder.on_new_packet)
+                instr_ctrl.error_ocurred.connect(self.quit)
                 
-            else:
-                txt = "Instrument '{0}' has no initial configuration"
-                self.log.info(txt.format(instrument_config.instrument.name))
-                instr_ctrl.begin()
-            
-            # store the instrument controller instance
-            self.instrument_controllers.append(instr_ctrl)
+                # store the instrument controller instance
+                self.instrument_controllers.append(instr_ctrl)
 
-        self.start_tcp_server()
+                # initialize instrument if needed
+                if instrument_config.init_commands:
+                    instr_init = InstrumentInitialization(instrument_config)
+                    instr_init.initialization_finished.connect(instr_ctrl.begin)
+                    instr_init.error_ocurred.connect(self.quit)
+                
+                    # store the init instrument controller instance
+                    self.instrument_init_controllers.append(instr_init)
+                    
+                    if not self.exiting:
+                        instr_init.begin()
+                    
+                else:
+                    txt = "Instrument '{0}' has no initial configuration"
+                    self.log.info(txt.format(instrument_config.instrument.name))
+                    instr_ctrl.begin()
+
+        if not self.exiting:
+            self.start_tcp_server()
     
     def quit(self):
-        for instr_ctrl in self.instrument_controllers:
-            instr_ctrl.quit()
-        
-        app.quit()
+        self.log.info("Exiting!")
+        if not self.exiting:
+            self.exiting = True
+
+            for init_ctrl in self.instrument_init_controllers:
+                self.log.debug("quit '{0}' instr_init".format(init_ctrl.instr_cfg.instrument.name))
+                init_ctrl.quit()
+                self.log.debug("wait '{0}' instr_init".format(init_ctrl.instr_cfg.instrument.name))
+                init_ctrl.wait()
+                self.log.debug("finished '{0}' instr_init".format(init_ctrl.instr_cfg.instrument.name))
+            
+            #del self.instrument_init_controllers
+            
+            for instr_ctrl in self.instrument_controllers:
+                self.log.debug("quit '{0}' instr_ctrl".format(instr_ctrl.instr_cfg.instrument.name))
+                instr_ctrl.quit()
+                self.log.debug("wait '{0}' instr_ctrl".format(instr_ctrl.instr_cfg.instrument.name))
+                instr_ctrl.wait()
+                self.log.debug("finished '{0}' instr_ctrl".format(instr_ctrl.instr_cfg.instrument.name))
+            
+            #del self.instrument_controllers
+            
+            self.log.debug("quit recorder")
+            self.recorder.quit()
+            self.log.debug("wait recorder")
+            self.recorder.wait()
+            self.log.debug("finished recorder")
+            
+            #del self.recorder
+            
+            self.log.debug("All instr_ctrls and inits exited and recorder too, now quit app!")
+            app.quit()
 
     def start_tcp_server(self):
         self.log.info("TCP server: Starting...")
@@ -84,6 +119,9 @@ class InstrumentController(QThread):
     # Signal for new command ready to send event
     new_command = pyqtSignal(Command)
     
+    # Signal to inform that an error ocurred while controlling the instrument
+    error_ocurred = pyqtSignal()
+    
     @staticmethod
     def create(instrument_config, *args, **kwds):
         om = InstrumentConfig.OperationMode
@@ -107,6 +145,8 @@ class InstrumentController(QThread):
         self.log.debug("Creating connection and parser...")
         self.parser = Parser()
         self.connection = Connection.create(self.instr_cfg.instrument.connection)
+        
+        self.exiting = False
 
     def begin(self):
         self.log.info("Preparing parser...")
@@ -115,6 +155,7 @@ class InstrumentController(QThread):
         self.parser.new_packet_parsed.connect(self.on_new_packet_parsed)
         # tx signal (self -> parser)
         self.new_command.connect(self.parser.on_new_command)
+        
         self.parser.begin(self.instr_cfg.instrument)
 
         self.log.info("Preparing connection...")
@@ -122,28 +163,36 @@ class InstrumentController(QThread):
         self.connection.new_data_received.connect(self.parser.on_new_data_received)
         # tx signal (parser -> connection)
         self.parser.new_data_ready.connect(self.connection.send_data)
+        # connection errors
+        self.connection.error_occurred.connect(self.on_error)
+        
         self.connection.begin(self.instr_cfg.instrument)
 
-        self.log.info("Starting!")
-
-        self.start()
+        if not self.exiting:
+            self.log.info("Starting!")
+            self.start()
+        else:
+            self.log.info("Not starting as GDAIS is exiting")
 
     def run(self):
         self.exec_()
 
     def quit(self):
-        self.log.debug("Closing connection...")
-        self.connection.quit()
-        self.connection.wait()
-        del self.connection
-    
-        self.log.debug("Closing parser...")
-        self.parser.quit()
-        self.parser.wait()
-        del self.parser
-        
-        self.log.debug("Ending InstrumentController thread")
-        QThread.quit(self)
+        if not self.exiting:
+            self.exiting = True
+            
+            self.log.debug("Closing connection...")
+            self.connection.quit()
+            self.connection.wait()
+            #del self.connection
+            
+            self.log.debug("Closing parser...")
+            self.parser.quit()
+            self.parser.wait()
+            #del self.parser
+            
+            self.log.debug("Ending InstrumentController thread")
+            QThread.quit(self)
 
     def on_new_packet_parsed(self, packet):
         # inform new packet received to the listening classes (e.g.: Recorder)
@@ -156,6 +205,11 @@ class InstrumentController(QThread):
             fields = [str(f.name) for f in packet.instrument_packet.fields]
             str_fields = ', '.join(["{0}: {1:g}".format(f, d) for f, d in zip(fields, packet.data)])
             self.log.info("({0})".format(str_fields))
+    
+    def on_error(self):
+        self.log.error("Error occurred!")
+        self.error_ocurred.emit()
+        self.quit()
 
 
 class BlockingInstrumentController(InstrumentController):
@@ -174,14 +228,19 @@ class BlockingInstrumentController(InstrumentController):
         self.rx_timeout.setSingleShot(True)
     
     def run(self):
-        # define a timeout, if response not received send the command again
-        self.rx_timeout.timeout.connect(self.send_command_timeout)
-        self.rx_timeout.start(self.RX_TIMEOUT)
+        if not self.exiting:
+            # define a timeout, if response not received send the command again
+            self.rx_timeout.timeout.connect(self.send_command_timeout)
+            self.rx_timeout.start(self.RX_TIMEOUT)
 
-        # send the first command
-        self.send_next_command()
+            # send the first command
+            self.send_next_command()
 
-        InstrumentController.run(self)
+            InstrumentController.run(self)
+    
+    def quit(self):
+        self.rx_timeout.stop()
+        InstrumentController.quit(self)
     
     def on_new_packet_parsed(self, packet):
         InstrumentController.on_new_packet_parsed(self, packet)
@@ -205,8 +264,8 @@ class BlockingInstrumentController(InstrumentController):
 
 class InstrumentInitialization(BlockingInstrumentController):
     
-    # Signal to inform that an error ocurred while initializing
-    initialization_error_ocurred = pyqtSignal()
+    # Signal to inform that the instrument initialization has been completed correctly
+    initialization_finished = pyqtSignal()
 
     def __init__(self, instrument_config):
         BlockingInstrumentController.__init__(self, instrument_config)
@@ -215,8 +274,6 @@ class InstrumentInitialization(BlockingInstrumentController):
         # list of init commands
         self.commands = deque(instrument_config.init_commands)
         self.current_command = None
-        
-        self.exiting = False
 
     def begin(self):
         self.log.info("Starting instrument initialization")
@@ -227,14 +284,15 @@ class InstrumentInitialization(BlockingInstrumentController):
         
         if error:
             self.log.error("Ending initialization as there has been an error")
-            self.initialization_error_ocurred.emit()
+            self.error_ocurred.emit()
+            self.quit()
         else:
             self.log.info("All init commands sent correctly, ending initialization")
+            self.initialization_finished.emit()
         
         self.quit()
     
     def quit(self):
-        self.rx_timeout.stop()
         BlockingInstrumentController.quit(self)
         self.log.debug("Instrument initialization finished!")
 
@@ -307,6 +365,11 @@ class PeriodicInstrumentController(NonBlockingInstrumentController):
         self.mapper.mapped.connect(self.send_command)
         
         NonBlockingInstrumentController.run(self)
+    
+    def quit(self):
+        for timer in self.timers:
+            timer.stop()
+        NonBlockingInstrumentController.quit(self)
 
     def send_command(self, num):
         self.new_command.emit(self.instr_cfg.operation_commands[num])
@@ -331,8 +394,14 @@ class SequenceInstrumentController(NonBlockingInstrumentController):
         self.send_command()
 
         NonBlockingInstrumentController.run(self)
+    
+    def quit(self):
+        self.tx_timer.stop()
+        NonBlockingInstrumentController.quit(self)
 
     def send_command(self):
+        self.log.debug("Timer TICK!")
+        
         # send next command
         cmd = self.commands[0]
         self.new_command.emit(cmd)
