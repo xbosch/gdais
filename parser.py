@@ -30,9 +30,6 @@ class Parser(QThread):
         
         # Default logger
         self.log = logging.getLogger('GDAIS.Parser')
-    
-    def __del__(self):
-        self.log.debug("Deleting parser thread")
 
     def begin(self,  instrument):
         self.log = logging.getLogger('GDAIS.'+instrument.short_name+'.Parser')

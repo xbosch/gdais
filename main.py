@@ -1,36 +1,60 @@
 from PyQt4.QtCore import pyqtSignal, QCoreApplication, QSignalMapper, QString, QThread, QTimer
 from PyQt4.QtNetwork import QTcpServer
 
-import logging, sys
+import argparse
 from collections import deque
+import logging
+import os
+import sys
 
 from connection import Connection
 from equipment import Equipment, InstrumentConfig, Command
 from parser import Parser, ParsedPacket
 from recorder import Recorder
 
-class GDAIS(object):
+class GDAIS(QCoreApplication):
 
-    def __init__(self):
+    def __init__(self, argv):
+        QCoreApplication.__init__(self, argv)
+        
+        # parse commandline arguments
+        parser = argparse.ArgumentParser(description='General Data Acquisition and Instrument Control System')
+        parser.add_argument('equipment',  help='Equipment file (.json) to work with')
+        
+        args = parser.parse_args()
+        self.equipment_file = os.path.abspath(args.equipment)
+        
+        # output logging
         logging.basicConfig(
                             level=logging.DEBUG,
                             format="%(asctime)s [%(name)s] %(levelname)s: %(message)s", 
                             stream=sys.stdout)
         self.log = logging.getLogger("GDAIS")
-        self.log.info("Welcome to GDAIS!")
-        
-        self.exiting = False
 
-    def start(self, filename):
-        equipment = Equipment(filename)
-
-        self.recorder = Recorder()
-        self.recorder.begin(equipment)
-
+        # lists to store instrument controller and initialization threads
         self.instrument_init_controllers = []
         self.instrument_controllers = []
+
+        # create data recorder thread
+        self.recorder = Recorder()
+        
+        # schedule start event to be run when the execution loop starts
+        QTimer.singleShot(0, self.start)
+    
+    def start(self):
+        self.log.info("Welcome to GDAIS!")
+        
+        # start TCP server for remote control
+        self.start_tcp_server()
+
+        # load equipment from given file
+        self.log.debug("Equipment file: '{0}'".format(self.equipment_file))
+        equipment = Equipment(self.equipment_file)
+        
+        # start data recorder thread
+        self.recorder.begin(equipment)
+        
         for instrument_config in equipment.instruments:
-            if not self.exiting:
                 # create instrument controller
                 instr_ctrl = InstrumentController.create(instrument_config)
                 instr_ctrl.new_packet.connect(self.recorder.on_new_packet)
@@ -48,50 +72,36 @@ class GDAIS(object):
                     # store the init instrument controller instance
                     self.instrument_init_controllers.append(instr_init)
                     
-                    if not self.exiting:
-                        instr_init.begin()
+                    self.log.debug("initialization ready to start")
+                    instr_init.begin()
                     
                 else:
                     txt = "Instrument '{0}' has no initial configuration"
                     self.log.info(txt.format(instrument_config.instrument.name))
                     instr_ctrl.begin()
-
-        if not self.exiting:
-            self.start_tcp_server()
     
     def quit(self):
         self.log.info("Exiting!")
-        if not self.exiting:
-            self.exiting = True
 
-            for init_ctrl in self.instrument_init_controllers:
-                self.log.debug("quit '{0}' instr_init".format(init_ctrl.instr_cfg.instrument.name))
+        # finish all running instrument initializations
+        for init_ctrl in self.instrument_init_controllers:
+            if init_ctrl.isRunning():
                 init_ctrl.quit()
-                self.log.debug("wait '{0}' instr_init".format(init_ctrl.instr_cfg.instrument.name))
                 init_ctrl.wait()
-                self.log.debug("finished '{0}' instr_init".format(init_ctrl.instr_cfg.instrument.name))
-            
-            #del self.instrument_init_controllers
-            
-            for instr_ctrl in self.instrument_controllers:
-                self.log.debug("quit '{0}' instr_ctrl".format(instr_ctrl.instr_cfg.instrument.name))
+        
+        # finish all running instrument controllers
+        for instr_ctrl in self.instrument_controllers:
+            if instr_ctrl.isRunning():
                 instr_ctrl.quit()
-                self.log.debug("wait '{0}' instr_ctrl".format(instr_ctrl.instr_cfg.instrument.name))
                 instr_ctrl.wait()
-                self.log.debug("finished '{0}' instr_ctrl".format(instr_ctrl.instr_cfg.instrument.name))
-            
-            #del self.instrument_controllers
-            
-            self.log.debug("quit recorder")
+        
+        # finish the data recorder if running
+        if self.recorder.isRunning():
+            self.log.debug("Closing data recorder...")
             self.recorder.quit()
-            self.log.debug("wait recorder")
             self.recorder.wait()
-            self.log.debug("finished recorder")
-            
-            #del self.recorder
-            
-            self.log.debug("All instr_ctrls and inits exited and recorder too, now quit app!")
-            app.quit()
+        
+        QCoreApplication.quit()
 
     def start_tcp_server(self):
         self.log.info("TCP server: Starting...")
@@ -139,14 +149,26 @@ class InstrumentController(QThread):
 
     def __init__(self, instrument_config):
         QThread.__init__(self)
+
+        # logging instance
         self.log = logging.getLogger('GDAIS.'+instrument_config.instrument.short_name)
+
+        # config of the instrument this controller is connected to
         self.instr_cfg = instrument_config
         
         self.log.debug("Creating connection and parser...")
+        
+        # parser thread
         self.parser = Parser()
+
+        # connection thread
         self.connection = Connection.create(self.instr_cfg.instrument.connection)
         
+        # wether quit() has been called, so we are exiting the thread
         self.exiting = False
+
+        # how many errors have ocurred
+        self.errors = 0
 
     def begin(self):
         self.log.info("Preparing parser...")
@@ -168,11 +190,11 @@ class InstrumentController(QThread):
         
         self.connection.begin(self.instr_cfg.instrument)
 
-        if not self.exiting:
+        if self.errors == 0 and not self.exiting:
             self.log.info("Starting!")
             self.start()
         else:
-            self.log.info("Not starting as GDAIS is exiting")
+            self.log.info("Not starting as there has been an error")
 
     def run(self):
         self.exec_()
@@ -181,18 +203,21 @@ class InstrumentController(QThread):
         if not self.exiting:
             self.exiting = True
             
-            self.log.debug("Closing connection...")
-            self.connection.quit()
-            self.connection.wait()
-            #del self.connection
+            if self.connection.isRunning():
+                self.log.debug("Closing connection...")
+                self.connection.quit()
+                self.connection.wait()
             
-            self.log.debug("Closing parser...")
-            self.parser.quit()
-            self.parser.wait()
-            #del self.parser
+            if self.parser.isRunning():
+                self.log.debug("Closing parser...")
+                self.parser.quit()
+                self.parser.wait()
             
             self.log.debug("Ending InstrumentController thread")
             QThread.quit(self)
+        
+        else:
+            self.log.error("quit() called twice!")
 
     def on_new_packet_parsed(self, packet):
         # inform new packet received to the listening classes (e.g.: Recorder)
@@ -209,7 +234,7 @@ class InstrumentController(QThread):
     def on_error(self):
         self.log.error("Error occurred!")
         self.error_ocurred.emit()
-        self.quit()
+        self.errors += 1
 
 
 class BlockingInstrumentController(InstrumentController):
@@ -228,15 +253,14 @@ class BlockingInstrumentController(InstrumentController):
         self.rx_timeout.setSingleShot(True)
     
     def run(self):
-        if not self.exiting:
-            # define a timeout, if response not received send the command again
-            self.rx_timeout.timeout.connect(self.send_command_timeout)
-            self.rx_timeout.start(self.RX_TIMEOUT)
+        # define a timeout, if response not received send the command again
+        self.rx_timeout.timeout.connect(self.send_command_timeout)
+        self.rx_timeout.start(self.RX_TIMEOUT)
 
-            # send the first command
-            self.send_next_command()
+        # send the first command
+        self.send_next_command()
 
-            InstrumentController.run(self)
+        InstrumentController.run(self)
     
     def quit(self):
         self.rx_timeout.stop()
@@ -279,19 +303,6 @@ class InstrumentInitialization(BlockingInstrumentController):
         self.log.info("Starting instrument initialization")
         BlockingInstrumentController.begin(self)
     
-    def end_initialization(self, error=False):
-        self.exiting = True
-        
-        if error:
-            self.log.error("Ending initialization as there has been an error")
-            self.error_ocurred.emit()
-            self.quit()
-        else:
-            self.log.info("All init commands sent correctly, ending initialization")
-            self.initialization_finished.emit()
-        
-        self.quit()
-    
     def quit(self):
         BlockingInstrumentController.quit(self)
         self.log.debug("Instrument initialization finished!")
@@ -299,7 +310,7 @@ class InstrumentInitialization(BlockingInstrumentController):
     def on_new_packet_parsed(self, packet):
         if not self.exiting:
             # check init command reply
-            # TEMP #
+            # TODO: TEMP #
             self.log.debug("Received packet:")
             InstrumentController.log_new_packet_parsed(self, packet)
             self.log.debug("Expected reply:")
@@ -338,6 +349,15 @@ class InstrumentInitialization(BlockingInstrumentController):
     def send_command_timeout(self):
         self.log.error("Timeout! init command reply not received")
         self.end_initialization(error=True)
+    
+    def end_initialization(self, error=False):
+        if error:
+            self.log.error("Ending initialization as there has been an error")
+            self.error_ocurred.emit()
+        else:
+            self.log.info("All init commands sent correctly, ending initialization")
+            self.initialization_finished.emit()
+            self.quit()
 
 
 class NonBlockingInstrumentController(InstrumentController):
@@ -400,8 +420,6 @@ class SequenceInstrumentController(NonBlockingInstrumentController):
         NonBlockingInstrumentController.quit(self)
 
     def send_command(self):
-        self.log.debug("Timer TICK!")
-        
         # send next command
         cmd = self.commands[0]
         self.new_command.emit(cmd)
@@ -415,8 +433,6 @@ class SequenceInstrumentController(NonBlockingInstrumentController):
 
 
 if __name__ == "__main__":
-
-    app = QCoreApplication(sys.argv)
-    gdais = GDAIS()
-    gdais.start("conf/equips/sidamon.json")
-    sys.exit(app.exec_())
+    
+    gdais = GDAIS(sys.argv)
+    sys.exit(gdais.exec_())

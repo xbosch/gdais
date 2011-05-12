@@ -53,9 +53,6 @@ class Connection(QThread):
         # default logger
         self.log = logging.getLogger('GDAIS.Connection')
     
-    def __del__(self):
-        self.log.debug("Deleting connection thread")
-    
     def begin(self,  instrument):
         # instrument description
         self.instrument = instrument
@@ -104,6 +101,10 @@ class Connection(QThread):
         self.exec_()
         self.log.debug("Ending connection thread")
     
+    def quit(self):
+        self.exiting = True
+        QThread.quit(self)
+    
     def send_data(self, data):
         format = self.instrument.packet_format
         raw_data = bytearray()
@@ -119,14 +120,14 @@ class Connection(QThread):
         txt_raw =  ' '.join(['0x{0:X}'.format(d) for d in raw_data])
         self.log.debug("Sending Raw Data: {0}".format(txt_raw))
         
+        # FIXME: Catch OSError exception (when disconnected)
         self.io_conn.write(str(raw_data))
     
-    def read_data(self, fd):
-        format = self.instrument.packet_format
+    def read_data(self):
         while not self.exiting:
+            # FIXME: Catch OSError exception (when disconnected)
             data = self.io_conn.read(self.buffer_size)
             if not data:
-                # continue reading until some data is read
                 break
             
             #TODO: used when reading from file
@@ -325,14 +326,11 @@ class SerialConnection(Connection):
                     2: serial.STOPBITS_TWO
                 }
     
-    def __del__(self):
-        if self.io_conn and self.io_conn.isOpen():
-            self.log.debug("Clearing serial port buffers (In and Out)")
-            self.io_conn.flushOutput()
-            self.io_conn.flushInput()
-            self.log.info("Closing serial port")
-            self.io_conn.close()
-        Connection.__del__(self)
+    def __init__(self):
+        Connection.__init__(self)
+        
+        # New data available notifier
+        self.notifier = None
     
     def begin(self,  instrument):
         self.log = logging.getLogger('GDAIS.'+instrument.short_name+'.SerialConnection')
@@ -353,19 +351,24 @@ class SerialConnection(Connection):
             Connection.begin(self, instrument)
     
     def run(self):
-        notifier = QSocketNotifier(self.io_conn.fileno(), QSocketNotifier.Read)
-        notifier.activated.connect(self.read_data)
+        self.notifier = QSocketNotifier(self.io_conn.fileno(), QSocketNotifier.Read)
+        self.notifier.activated.connect(self.read_data)
         
         Connection.run(self)
+    
+    def quit(self):
+        if self.notifier and self.notifier.isEnabled():
+            self.notifier.setEnabled(False)
+        if self.io_conn and self.io_conn.isOpen():
+            self.log.debug("Clearing serial port buffers (In and Out)")
+            self.io_conn.flushOutput()
+            self.io_conn.flushInput()
+            self.log.info("Closing serial port")
+            self.io_conn.close()
+        Connection.quit(self)
 
 
 class FileConnection(Connection):
-    
-    def __del__(self):
-        if self.io_conn:
-            self.log.info("Closing input file")
-            self.io_conn.close()
-        Connection.__del__(self)
 
     def begin(self,  instrument):
         self.log = logging.getLogger("GDAIS."+instrument.short_name+".FileConnection")
@@ -378,13 +381,15 @@ class FileConnection(Connection):
             Connection.begin(self, instrument)
     
     def run(self):
-        self.read_data(self.io_conn.fileno())
+        self.read_data()
         Connection.run(self)
     
     def quit(self):
-        self.exiting = True
+        if self.io_conn:
+            self.log.info("Closing input file")
+            self.io_conn.close()
         Connection.quit(self)
     
     def send_data(self, data):
-        # file connection can't send data
+        # file connection can not send data
         raise NotImplementedError
