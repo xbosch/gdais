@@ -2,35 +2,39 @@ from PyQt4.QtCore import QThread, QString
 
 from datetime import datetime
 from numpy import dtype, array
+import logging
 import os
 from tables import *
 from time import time
 
 class Recorder(QThread):
     
-    TAG = "[Recorder]"
-    DATA_PATH = "data/"
+    DATA_PATH = "data"
 
     def __init__(self):
         QThread.__init__(self)
+        
+        # HDF-5 data object
         self.h5file = None
-    
-    def __del__(self):
-        if self.h5file:
-            self.h5file.close()
+        
+        # default logger
+        self.log = logging.getLogger('GDAIS.Recorder')
 
     def begin(self, equipment):
-        dir = self.DATA_PATH + equipment.short_name
+        dir = os.path.join(os.path.abspath(self.DATA_PATH), equipment.short_name)
+        self.log.info("Data output directory: '{0}'".format(dir))
         if not os.path.exists(dir):
-            os.makedirs(dir) # TODO: race condition if directory created between the two calls, quite unprobable
+            # TODO: race condition if directory created between the two calls, quite unprobable
+            os.makedirs(dir)
         
-        txt = "{0}/{1}_{2}.h5"
-        self.filename = txt.format(dir, equipment.short_name, datetime.now().strftime("%Y%m%d_%H%M%S"))
+        txt = "{0}_{1}.h5"
+        filename = txt.format(equipment.short_name, datetime.now().strftime("%Y%m%d_%H%M%S"))
+        self.filepath = os.path.join(dir, filename)
         try:
-            self.h5file = openFile(self.filename, mode = "w", title = "{0} data file".format(equipment.name))
+            self.h5file = openFile(self.filepath, mode = "w", title = "{0} data file".format(equipment.name))
 
         except IOError:
-            print self.TAG, "Error creating HDF5 file: ",  self.filename
+            self.log.error("Error creating HDF5 file: '{0}'".format(self.filepath))
             raise
         
         else:
