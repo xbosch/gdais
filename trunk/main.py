@@ -101,6 +101,7 @@ class GDAIS(QCoreApplication):
             self.recorder.quit()
             self.recorder.wait()
         
+        self.log.info("Goodbye!")
         QCoreApplication.quit()
 
     def start_tcp_server(self):
