@@ -5,6 +5,7 @@ Module implementing the instrument model.
 """
 import json
 from numpy import dtype
+import os
 
 class Instrument(object):
     
@@ -15,6 +16,8 @@ class Instrument(object):
                         'big-endian': '>', 
                         'little-endian': '<'
                     }
+
+    INSTR_PATH = '/home/pau/feina/UPC/projecte/code/GDAIS'
     
     def __init__(self):
         self.filename = ""
@@ -29,6 +32,8 @@ class Instrument(object):
     
     def __init__(self,  filename):
         self.filename = filename
+        if not os.path.isabs(filename):
+          self.filename = os.path.join(self.INSTR_PATH, filename)
         with open(self.filename, "r") as fp:
             instr = json.load(fp)
         

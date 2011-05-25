@@ -42,7 +42,8 @@ class Connection(QThread):
         self.old_data = None
         
         # last position in self.packet checked for packet end
-        self.last_index = 0
+        # -1 means that packet start has not been found yet
+        self.last_index = -1
         
         # flag for exiting the read_data iteration
         self.exiting = False
@@ -130,12 +131,16 @@ class Connection(QThread):
             if not data:
                 break
             
-            #TODO: used when reading from file
-            #self.sleep(1)
+            #txt_raw =  ' '.join(['0x{0:X}'.format(ord(d)) for d in data])
+            #self.log.debug("0. input data: {0}".format(txt_raw))
             
-            if not self.packet:
-                # starting a new packet, using the remaining data from previous packet
+            #TODO: used when reading from file
+            #self.usleep(100)
+            
+            if self.last_index == -1:
+                # no packet start has been found yet
                 if self.old_data:
+                    # use the remaining data from previous packet
                     data = self.old_data + data
                     self.old_data = None
                 self._find_packet_start(data)
@@ -143,12 +148,21 @@ class Connection(QThread):
                 # already started a packet, append new data
                 self.packet += data
             
-            if self.packet:
+            #txt_raw =  ' '.join(['0x{0:X}'.format(d) for d in self.packet])
+            #self.log.debug("1. packet after start: {0}".format(txt_raw))
+            
+            if self.last_index >= 0 and self.packet:
+                # packet start and some data already found, try to find its end
                 self._find_packet_end()
+            
+            #txt_raw =  ' '.join(['0x{0:X}'.format(d) for d in self.packet])
+            #self.log.debug("2. packet after end: {0}".format(txt_raw))
             
             if self.packet_found:
                 self.packet_found = False
                 break
+            
+            #self.log.debug("3. bytes in serial input buffer: {0}".format(self.io_conn.inWaiting()))
     
     def _find_packet_start(self, data):
         """Find a new packet start in the given data array.
@@ -160,6 +174,7 @@ class Connection(QThread):
         See also: _find_packet_start_mark
         """
         self.packet += data
+        self.last_index = 0 # move index to the beginning of the packet
     
     def _find_packet_start_mark(self, data):
         """Find a new packet start in the given data array, using a start mark.
@@ -175,6 +190,10 @@ class Connection(QThread):
                 self.packet += data[i + self.start_bytes_len:]
                 self.last_index = 0 # move index to the beginning of the packet
                 break
+        
+        if self.last_index == -1:
+            # start was not found, save data as it may contain part of the start sequence
+            self.old_data = data
     
     def _find_packet_end(self):
         """Find current packet end.
@@ -201,6 +220,7 @@ class Connection(QThread):
         
         See also: _find_packet_end
         """
+        i = 0
         for i in range(self.last_index, len(self.packet) - self.end_bytes_len + 1):
             if self.packet[i:i + self.end_bytes_len] == self.end_bytes:
                 self._new_packet_found(
@@ -224,6 +244,7 @@ class Connection(QThread):
         
         See also: _find_packet_end, _find_packet_end_next_start_or_len
         """
+        i = 0
         for i in range(self.last_index, len(self.packet) - self.start_bytes_len + 1):
             if self.packet[i:i + self.start_bytes_len] == self.start_bytes:
                 self._new_packet_found(
@@ -300,6 +321,7 @@ class Connection(QThread):
         # store not used data and prepare for next packet
         self.old_data = excess_data
         self.packet = bytearray('')
+        self.last_index = -1
         
         # set new packet found flag
         self.packet_found = True
