@@ -1,4 +1,4 @@
-from PyQt4.QtCore import pyqtSignal, QCoreApplication, QSignalMapper, QString, QThread, QTimer
+from PyQt4.QtCore import pyqtSignal, QCoreApplication, QObject, QSignalMapper, QString, QThread, QTimer
 from PyQt4.QtNetwork import QTcpServer
 
 import argparse
@@ -30,6 +30,9 @@ class GDAIS(QCoreApplication):
                             format="%(asctime)s [%(name)s] %(levelname)s: %(message)s", 
                             stream=sys.stdout)
         self.log = logging.getLogger("GDAIS")
+        
+        # control server for GDAIS remote control
+        self.control_server = ControlServer()
 
         # lists to store instrument controller and initialization threads
         self.instrument_init_controllers = []
@@ -44,8 +47,9 @@ class GDAIS(QCoreApplication):
     def start(self):
         self.log.info("Welcome to GDAIS!")
         
-        # start TCP server for remote control
-        self.start_tcp_server()
+        # start server for remote control
+        self.control_server.quit_command_received.connect(self.quit)
+        self.control_server.start()
 
         # load equipment from given file
         self.log.debug("Equipment file: '{0}'".format(self.equipment_file))
@@ -55,7 +59,7 @@ class GDAIS(QCoreApplication):
         self.recorder.begin(equipment)
         
         for instrument_config in equipment.instruments:
-                # create instrument controller
+                # create instrument controller thread
                 instr_ctrl = InstrumentController.create(instrument_config)
                 instr_ctrl.new_packet.connect(self.recorder.on_new_packet)
                 instr_ctrl.error_ocurred.connect(self.quit)
@@ -72,7 +76,7 @@ class GDAIS(QCoreApplication):
                     # store the init instrument controller instance
                     self.instrument_init_controllers.append(instr_init)
                     
-                    self.log.debug("initialization ready to start")
+                    self.log.debug("Initialization ready to start")
                     instr_init.begin()
                     
                 else:
@@ -83,19 +87,19 @@ class GDAIS(QCoreApplication):
     def quit(self):
         self.log.info("Exiting!")
 
-        # finish all running instrument initializations
+        # finish all running instrument initialization threads
         for init_ctrl in self.instrument_init_controllers:
             if init_ctrl.isRunning():
                 init_ctrl.quit()
                 init_ctrl.wait()
         
-        # finish all running instrument controllers
+        # finish all running instrument controller threads
         for instr_ctrl in self.instrument_controllers:
             if instr_ctrl.isRunning():
                 instr_ctrl.quit()
                 instr_ctrl.wait()
         
-        # finish the data recorder if running
+        # finish the data recorder thread if running
         if self.recorder.isRunning():
             self.log.debug("Closing data recorder...")
             self.recorder.quit()
@@ -104,22 +108,59 @@ class GDAIS(QCoreApplication):
         self.log.info("Goodbye!")
         QCoreApplication.quit()
 
-    def start_tcp_server(self):
-        self.log.info("TCP server: Starting...")
+
+class ControlServer(QObject):
+    
+    # Signal to inform that the quit command has been received and the system should exit
+    quit_command_received = pyqtSignal()
+    
+    def __init__(self):
+        QObject.__init__(self)
+        
+        # logging instance
+        self.log = logging.getLogger('GDAIS.ControlServer')
+        
+        # TCP server to listen for control commands
         self.tcp_server = QTcpServer()
+    
+    def start(self):
+        self.log.info("Starting TCP server...")
         if self.tcp_server.listen(port = 12345):
-            txt = "TCP server: open a connection to http://localhost:{0} to quit GDAIS"
+            txt = "Listening at http://localhost:{0} for commands"
             self.log.info(txt.format(self.tcp_server.serverPort()))
-            self.tcp_server.newConnection.connect(self.quit)
+            self.tcp_server.newConnection.connect(self._accept_connection)
         else:
-            self.log.warn("Unable to start TCP server: {0}".format(self.tcp_server.errorString()))
+            self.log.warn("Unable to start: {0}".format(self.tcp_server.errorString()))
 
             # define a timer to auto-quit the app after 10 sec
-            timeout = 10*1000
-            self.log.info("GDAIS will run for {0} seconds and then die.".format(timeout/1000))
+            timeout = 10 # seconds
+            self.log.warn("GDAIS will run for {0} seconds and then die.".format(timeout))
             self.timer = QTimer()
             self.timer.timeout.connect(self.quit)
-            self.timer.start(timeout)
+            self.timer.start(timeout * 1000) # msec
+    
+    def quit(self):
+        if self.tcp_server.isListening():
+            self.tcp_server.close()
+        self.quit_command_received.emit()
+    
+    def _accept_connection(self):
+        self.tcp_connection = self.tcp_server.nextPendingConnection()
+        self.tcp_connection.readyRead.connect(self._read_data)
+        self.tcp_connection.error.connect(self._error_ocurred)
+        
+        self.log.debug("Accepted connection")
+    
+    def _read_data(self):
+        tcp_data = self.tcp_connection.readAll()
+        if tcp_data == 'quit':
+            self.log.info("Received 'quit' command")
+            self.quit()
+        else:
+            self.log.error("Received unknown command: {0}".format(tcp_data))
+    
+    def _error_ocurred(self, socket_error):
+        self.log.error("TCP error ocurred: {0}".format(self.tcp_connection.errorString()))
 
 
 class InstrumentController(QThread):
