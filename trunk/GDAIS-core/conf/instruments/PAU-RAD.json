@@ -1,0 +1,46 @@
+{
+ "byte_order": "big-endian", 
+ "rx_packets": {
+  "97": {
+   "fields": [
+    {
+     "type": "uint16", 
+     "name": "EMPTY_FIELD"
+    }
+   ], 
+   "name": "Acquire"
+  }, 
+  "98": {
+   "fields": [
+    {
+     "type": "uint16", 
+     "name": "EMPTY_FIELD"
+    }
+   ], 
+   "name": "Calibrate"
+  }
+ }, 
+ "name": "PAU-RAD", 
+ "short_name": "pau_rad", 
+ "connection": {
+  "parity": "N", 
+  "baudrate": 9600, 
+  "stop_bits": 1, 
+  "data_bits": 8, 
+  "type": "Serial", 
+  "port": "/dev/ttyS0"
+ }, 
+ "packet_format": {
+  "rx_format": [
+   "Packet num", 
+   "Packet fields"
+  ], 
+  "tx_format": [
+   "Packet num", 
+   "Packet fields"
+  ], 
+  "start_bytes": [], 
+  "end_bytes": []
+ }, 
+ "tx_packets": {}
+}

@@ -1,0 +1,308 @@
+{
+ "byte_order": "big-endian", 
+ "rx_packets": {
+  "5": {
+   "fields": [
+    {
+     "type": "uint8", 
+     "name": "length"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "checksum"
+    }
+   ], 
+   "name": "Set Period Ack"
+  }, 
+  "17": {
+   "fields": [
+    {
+     "type": "uint8", 
+     "name": "length"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "checksum"
+    }
+   ], 
+   "name": "Go To Measurement Ack"
+  }, 
+  "209": {
+   "fields": [
+    {
+     "type": "uint8", 
+     "name": "length"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "checksum"
+    }
+   ], 
+   "name": "Set Output Mode Ack"
+  }, 
+  "49": {
+   "fields": [
+    {
+     "type": "uint8", 
+     "name": "length"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "checksum"
+    }
+   ], 
+   "name": "Go To Config Ack"
+  }, 
+  "50": {
+   "fields": [
+    {
+     "type": "uint8", 
+     "name": "length"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Acceleration X"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Acceleration Y"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Acceleration Z"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Rate of turn X"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Rate of turn Y"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Rate of turn Z"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Magnetic Field X"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Magnetic Field Y"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Magnetic Field Z"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Roll"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Pitch"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Yaw"
+    },
+    {
+     "type": "uint16", 
+     "name": "Analog input 1"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Latitude"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Longitude"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Altitude"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Velocity X"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Velocity Y"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Velocity Z"
+    },
+    {
+     "type": "uint8", 
+     "name": "checksum"
+    }
+   ], 
+   "name": "MT Data"
+  }, 
+  "211": {
+   "fields": [
+    {
+     "type": "uint8", 
+     "name": "length"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "checksum"
+    }
+   ], 
+   "name": "Set Output Settings Ack"
+  }, 
+  "213": {
+   "fields": [
+    {
+     "type": "uint8", 
+     "name": "length"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "checksum"
+    }
+   ], 
+   "name": "Set Output Skip Factor Ack"
+  }
+ }, 
+ "name": "X-sens MTi-G", 
+ "short_name": "xsens", 
+ "connection": {
+  "parity": "N", 
+  "baudrate": 115200, 
+  "stop_bits": 1, 
+  "data_bits": 8, 
+  "type": "Serial", 
+  "port": "/dev/ttyUSB0"
+ }, 
+ "packet_format": {
+  "rx_format": [
+   "Start bytes", 
+   "Packet num", 
+   "Packet fields"
+  ], 
+  "tx_format": [
+   "Start bytes", 
+   "Packet num", 
+   "Packet fields"
+  ], 
+  "start_bytes": [
+   250, 
+   255
+  ], 
+  "end_bytes": []
+ }, 
+ "tx_packets": {
+  "208": {
+   "fields": [
+    {
+     "type": "uint8", 
+     "name": "length"
+    }, 
+    {
+     "type": "uint16", 
+     "name": "mode"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "checksum"
+    }
+   ], 
+   "name": "Set Output Mode"
+  }, 
+  "4": {
+   "fields": [
+    {
+     "type": "uint8", 
+     "name": "length"
+    }, 
+    {
+     "type": "uint16", 
+     "name": "period"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "checksum"
+    }
+   ], 
+   "name": "Set Period"
+  }, 
+  "48": {
+   "fields": [
+    {
+     "type": "uint8", 
+     "name": "length"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "checksum"
+    }
+   ], 
+   "name": "Go To Config"
+  }, 
+  "16": {
+   "fields": [
+    {
+     "type": "uint8", 
+     "name": "length"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "checksum"
+    }
+   ], 
+   "name": "Go To Measurement"
+  }, 
+  "210": {
+   "fields": [
+    {
+     "type": "uint8", 
+     "name": "length"
+    }, 
+    {
+     "type": "uint32", 
+     "name": "settings"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "checksum"
+    }
+   ], 
+   "name": "Set Output Settings"
+  }, 
+  "52": {
+   "fields": [
+    {
+     "type": "uint8", 
+     "name": "length"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "checksum"
+    }
+   ], 
+   "name": "Request Data"
+  }, 
+  "212": {
+   "fields": [
+    {
+     "type": "uint8", 
+     "name": "length"
+    }, 
+    {
+     "type": "uint16", 
+     "name": "skip factor"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "checksum"
+    }
+   ], 
+   "name": "Set Output Skip Factor"
+  }
+ }
+}
