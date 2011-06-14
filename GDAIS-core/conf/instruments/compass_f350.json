@@ -1,0 +1,68 @@
+{
+ "byte_order": "big-endian", 
+ "rx_packets": {
+  "0": {
+   "fields": [
+    {
+     "type": "uint16", 
+     "name": "Direction Degrees"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "Direction Minutes"
+    }, 
+    {
+     "type": "uint16", 
+     "name": "Temperature"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "Inclination X"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "Inclination Y"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "Status"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "Checksum"
+    }
+   ], 
+   "name": "Compass Data"
+  }
+ }, 
+ "name": "Compass F350", 
+ "short_name": "compass_f350", 
+ "connection": {
+  "parity": "N", 
+  "baudrate": 57600, 
+  "stop_bits": 1, 
+  "data_bits": 8, 
+  "type": "Serial", 
+  "port": "/dev/ttyUSB0"
+ }, 
+ "packet_format": {
+  "rx_format": [
+   "Packet fields"
+  ], 
+  "tx_format": [
+   "Packet num"
+  ], 
+  "start_bytes": [], 
+  "end_bytes": []
+ }, 
+ "tx_packets": {
+  "17": {
+   "fields": [], 
+   "name": "Request Compass Measure"
+  }, 
+  "18": {
+   "fields": [], 
+   "name": "Non-existent request"
+  }
+ }
+}
