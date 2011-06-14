@@ -1,5 +1,5 @@
-from PyQt4.QtCore import pyqtSignal, QCoreApplication, QObject, QSignalMapper, QString, QThread, QTimer
-from PyQt4.QtNetwork import QTcpServer
+from PyQt4.QtCore import pyqtSignal, QCoreApplication, QEventLoop, QObject, QSignalMapper, QString, QThread, QTimer, QUrl
+from PyQt4.QtNetwork import QNetworkAccessManager, QNetworkRequest, QTcpServer
 
 import argparse
 from collections import deque
@@ -13,6 +13,9 @@ from parser import Parser, ParsedPacket
 from recorder import Recorder
 
 class GDAIS(QCoreApplication):
+    
+    # Signal to inform that a notification has to be sent
+    notify = pyqtSignal(str)
 
     def __init__(self, argv):
         QCoreApplication.__init__(self, argv)
@@ -33,6 +36,9 @@ class GDAIS(QCoreApplication):
         
         # control server for GDAIS remote control
         self.control_server = ControlServer()
+        
+        # notifier of GDAIS events to an external server
+        self.notifier = Notifier()
 
         # lists to store instrument controller and initialization threads
         self.instrument_init_controllers = []
@@ -54,6 +60,14 @@ class GDAIS(QCoreApplication):
         # load equipment from given file
         self.log.debug("Equipment file: '{0}'".format(self.equipment_file))
         equipment = Equipment(self.equipment_file)
+        
+        # load notifier and start it
+        self.notifier.equipment = equipment.short_name
+        self.notify.connect(self.notifier.notify)
+        self.notifier.start()
+        
+        #notify start event
+        self.notify.emit('start')
         
         # start data recorder thread
         self.recorder.begin(equipment)
@@ -104,6 +118,12 @@ class GDAIS(QCoreApplication):
             self.log.debug("Closing data recorder...")
             self.recorder.quit()
             self.recorder.wait()
+        
+        # finish notifier thread
+        if self.notifier.isRunning():
+            self.log.debug("Closing notifier...")
+            self.notifier.quit()
+            self.notifier.wait()
         
         self.log.info("Goodbye!")
         QCoreApplication.quit()
@@ -161,6 +181,52 @@ class ControlServer(QObject):
     
     def _error_ocurred(self, socket_error):
         self.log.error("TCP error ocurred: {0}".format(self.tcp_connection.errorString()))
+
+
+class Notifier(QThread):
+    
+    SERVER_URL = "http://127.0.0.1:6543"
+    
+    def __init__(self):
+        QThread.__init__(self)
+        
+        # logging instance
+        self.log = logging.getLogger('GDAIS.Notifier')
+        
+        # Network manager to send notifications
+        self.manager = QNetworkAccessManager()
+        self.manager.finished.connect(self._reply_finished)
+        
+        # Name of the equipment to notify (needs to be initialized before calling notify)
+        self.equipment = ''
+        
+        # flag for when quit command is received
+        self.exiting = False
+    
+    def quit(self):
+        loop = QEventLoop()
+        reply = self._make_request('quit')
+        reply.finished.connect(loop.quit)
+        loop.exec_()
+        
+        del self.manager
+        QThread.quit(self)
+    
+    def notify(self, event):
+        reply = self._make_request(event)
+    
+    def _make_request(self, event):
+        url = QUrl("{0}/notify_{1}/{2}".format(self.SERVER_URL, event, self.equipment))
+        self.log.debug("Sending notification for '{0}' event to {1}.".format(event, url))
+        reply = self.manager.get(QNetworkRequest(url))
+        reply.error.connect(self._reply_error)
+        return reply
+    
+    def _reply_finished(self, network_reply):
+        self.log.debug("Reply received: {0}".format(network_reply.readAll()))
+    
+    def _reply_error(self, network_error):
+        self.log.error("Error receiving reply: {0}".format(network_error))
 
 
 class InstrumentController(QThread):
@@ -237,9 +303,6 @@ class InstrumentController(QThread):
             self.start()
         else:
             self.log.info("Not starting as there has been an error")
-
-    def run(self):
-        self.exec_()
 
     def quit(self):
         if not self.exiting:
