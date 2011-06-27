@@ -18,7 +18,7 @@
 
 <body>
 
-  % if false and request.session.peek_flash():
+  % if request.session.peek_flash():
     <div id="flash">
       <% flash = request.session.pop_flash() %>
       % for message in flash:

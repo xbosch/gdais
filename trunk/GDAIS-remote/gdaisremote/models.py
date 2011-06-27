@@ -1,3 +1,5 @@
+import os
+import re
 import transaction
 
 from sqlalchemy import Column
@@ -21,7 +23,7 @@ class EquipmentModel(Base):
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(255), unique=True)
     desc = Column(Unicode)
-    running = Boolean()
+    running = Column(Boolean)
 
     def __init__(self, name, desc):
         self.name = name
@@ -29,9 +31,17 @@ class EquipmentModel(Base):
         self.running = False
 
 def populate():
+    here = os.path.dirname(os.path.abspath(__file__))
+    gdais_path = os.path.normpath(os.path.join(here, '..', '..', 'GDAIS-core'))
+    equips_path = os.path.join(gdais_path, 'conf', 'equips')
+
+    test = re.compile("\.json$", re.IGNORECASE)
+    filenames = filter(test.search, os.listdir(equips_path))
+
     session = DBSession()
-    e = EquipmentModel(name=u'prova1', desc=u'equip de prova sense res util')
-    session.add(e)
+    for fn in filenames:
+        e = EquipmentModel(name=os.path.splitext(fn)[0], desc=fn)
+        session.add(e)
     session.flush()
     transaction.commit()
     
@@ -43,3 +53,5 @@ def initialize_sql(engine):
         populate()
     except IntegrityError:
         DBSession.rollback()
+
+# vim: et ts=4 sw=4
