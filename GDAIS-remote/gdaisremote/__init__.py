@@ -27,6 +27,8 @@ def main(global_config, **settings):
     config.add_route('stop' , '/stop/{equip}')
     config.add_route('notify_quit', '/notify_quit/{equip}')
     config.add_route('view', '/view/{equip}')
+    config.add_route('view_log', '/view_log/{equip}', xhr=True)
+    config.add_route('log', '/log/{equip}')
 
     # scan files for config options
     config.scan()

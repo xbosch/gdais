@@ -1,0 +1,49 @@
+html {
+  font-size: 16px;
+}
+
+body {
+  padding: 1em;
+}
+
+#flash {
+  width: 500px;
+}
+
+#notfound {
+  font-size: 16px;
+  width: 500px;
+  text-align: center;
+  background-color: #fbe3e4;
+  border-top: 2px solid #fbc2c4;
+  border-bottom: 2px solid #fbc2c4;
+  padding: 0 20px 30px 20px;
+}
+
+/* Equipments list */
+#equips {
+  width: 500px;
+  list-style: none;
+}
+
+#equips li {
+  padding: 5px 0 5px 0;
+  border-bottom: 1px solid #bbbbbb;
+}
+
+#equips li.last {
+  border-bottom: none;
+}
+
+#equips .name {
+}
+
+#equips .actions {
+  width: auto;
+  float: right;
+}
+
+/* DataTables */
+#dt label {
+  font-weight: normal;
+}
