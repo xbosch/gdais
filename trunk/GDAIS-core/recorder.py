@@ -29,7 +29,7 @@ class Recorder(QThread):
             os.makedirs(dir)
         
         txt = "{0}_{1}.h5"
-        filename = txt.format(equipment.short_name, datetime.now().strftime("%Y%m%d_%H%M%S"))
+        filename = txt.format(equipment.short_name, datetime.utcnow().strftime("%Y%m%d_%H%M%S"))
         self.filepath = os.path.join(dir, filename)
         try:
             self.h5file = openFile(self.filepath, mode = "w", title = "{0} data file".format(equipment.name))
