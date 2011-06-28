@@ -29,6 +29,8 @@ def main(global_config, **settings):
     config.add_route('view', '/view/{equip}')
     config.add_route('view_log', '/view_log/{equip}', xhr=True)
     config.add_route('log', '/log/{equip}')
+    config.add_route('download', '/download/{equip}/{date}/{time}')
+    config.add_route('delete', '/delete/{equip}/{date}/{time}')
 
     # scan files for config options
     config.scan()
