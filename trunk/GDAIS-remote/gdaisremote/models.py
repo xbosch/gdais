@@ -2,14 +2,18 @@ import os
 import re
 import transaction
 
+from sqlalchemy import Boolean
 from sqlalchemy import Column
+from sqlalchemy import DateTime
+from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import Unicode
-from sqlalchemy import Boolean
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 
+from sqlalchemy.orm import backref
+from sqlalchemy.orm import relationship
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 
@@ -30,6 +34,33 @@ class EquipmentModel(Base):
         self.desc = desc
         self.running = False
 
+class LogModel(Base):
+    __tablename__ = 'logs'
+    id = Column(Integer, primary_key=True)
+    name = Column(Unicode)
+    levelno = Column(Integer)
+    levelname = Column(Unicode)
+    msg = Column(Unicode)
+    date = Column(DateTime)
+    exc_text = Column(Unicode)
+    exc_info = Column(Unicode)
+    equip_id = Column(Integer, ForeignKey('equipments.id'))
+
+    equipment = relationship(
+                    EquipmentModel,
+                    backref=backref('logs', order_by=id),
+                    cascade="all, delete, delete-orphan")
+
+    def __init__(self, name, levelno, levelname, msg, date, exc_text, exc_info, equip_id):
+        self.name = name
+        self.levelno = levelno
+        self.levelname = levelname
+        self.msg = msg
+        self.date = date
+        self.exc_text = exc_text
+        self.exc_info = exc_info
+        self.equip_id = equip_id
+
 def populate():
     here = os.path.dirname(os.path.abspath(__file__))
     gdais_path = os.path.normpath(os.path.join(here, '..', '..', 'GDAIS-core'))
@@ -44,7 +75,7 @@ def populate():
         session.add(e)
     session.flush()
     transaction.commit()
-    
+
 def initialize_sql(engine):
     DBSession.configure(bind=engine)
     Base.metadata.bind = engine

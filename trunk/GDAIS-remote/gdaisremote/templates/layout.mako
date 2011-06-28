@@ -8,12 +8,25 @@
   <meta name="keywords" content="python web application" />
   <meta name="description" content="pyramid web application" />
   <link rel="shortcut icon" href="${request.static_url('gdaisremote:static/favicon.ico')}" />
-  <link rel="stylesheet" href="${request.static_url('gdaisremote:static/pylons.css')}" type="text/css" media="screen" charset="utf-8" />
-  <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton|Nobile:regular,i,b,bi&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
-  <!--[if lte IE 6]>
-  <link rel="stylesheet" href="${request.static_url('gdaisremote:static/ie6.css')}" type="text/css" media="screen" charset="utf-8" />
+  % if reload == True:
+  <meta http-equiv="refresh" content="4" />
+  % endif
+
+  <!-- blueprint styles -->
+  <link rel="stylesheet" href="${request.static_url('gdaisremote:static/css/blueprint/screen.css')}" type="text/css" media="screen, projection" />
+  <link rel="stylesheet" href="${request.static_url('gdaisremote:static/css/blueprint/print.css')}" type="text/css" media="print" />
+  <!--[if lt IE 8>
+    <link rel="stylesheet" href="${request.static_url('gdaisremote:static/css/blueprint/ie.css')}" type="text/css" media="screen, projection" />
   <![endif]-->
-  <link rel="stylesheet" href="${request.static_url('gdaisremote:static/gdais.css')}" type="text/css" media="screen" charset="utf-8" />
+
+  <!-- GDAIS styles -->
+  <link rel="stylesheet" href="${request.static_url('gdaisremote:static/css/gdais.css')}" type="text/css" media="screen" charset="utf-8" />
+
+  <!-- jQuery DataTables styles -->
+  <link rel="stylesheet" href="${request.static_url('gdaisremote:static/datatables/css/datatables_page.css')}" type="text/css" media="screen" />
+  <link rel="stylesheet" href="${request.static_url('gdaisremote:static/datatables/css/datatables_jui.css')}" type="text/css" media="screen" />
+  <link rel="stylesheet" href="${request.static_url('gdaisremote:static/datatables/css/smoothness/jquery-ui-1.8.13.custom.css')}" type="text/css" media="screen" />
+
 </head>
 
 <body>
@@ -22,7 +35,9 @@
     <div id="flash">
       <% flash = request.session.pop_flash() %>
       % for message in flash:
-        ${message}<br>
+      <div class="info">
+        ${message}
+      </div>
       % endfor
     </div>
   % endif
