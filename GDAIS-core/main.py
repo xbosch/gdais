@@ -4,6 +4,7 @@ from PyQt4.QtNetwork import QNetworkAccessManager, QNetworkRequest, QTcpServer
 import argparse
 from collections import deque
 import logging
+import logging.handlers
 import os
 import sys
 
@@ -14,6 +15,8 @@ from recorder import Recorder
 
 class GDAIS(QCoreApplication):
     
+    BASE_PATH = '/home/pau/feina/UPC/projecte/code/GDAIS/GDAIS-core'
+    
     # Signal to inform that a notification has to be sent
     notify = pyqtSignal(str)
 
@@ -21,17 +24,21 @@ class GDAIS(QCoreApplication):
         QCoreApplication.__init__(self, argv)
         
         # parse commandline arguments
-        parser = argparse.ArgumentParser(description='General Data Acquisition and Instrument Control System')
+        parser = argparse.ArgumentParser(description='General Data Acquisition and Instrument control System (GDAIS)')
         parser.add_argument('equipment',  help='Equipment file (.json) to work with')
+        parser.add_argument('-d', action='store_true', default=False, dest='background',
+                                            help='Run in background')
         
         args = parser.parse_args()
         self.equipment_file = os.path.abspath(args.equipment)
+        self.in_background = args.background
         
         # output logging
         logging.basicConfig(
                             level=logging.DEBUG,
                             format="%(asctime)s [%(name)s] %(levelname)s: %(message)s", 
-                            stream=sys.stdout)
+                            filename=os.path.join(self.BASE_PATH, 'debug.log'),
+                            filemode='w')
         self.log = logging.getLogger("GDAIS")
         
         # control server for GDAIS remote control
@@ -59,14 +66,27 @@ class GDAIS(QCoreApplication):
 
         # load equipment from given file
         self.log.debug("Equipment file: '{0}'".format(self.equipment_file))
-        equipment = Equipment(self.equipment_file)
+        try:
+            equipment = Equipment(self.equipment_file)
+        except IOError:
+            self.log.exception("Couldn't load equipment file")
+            QTimer.singleShot(0, self.quit) # exit GDAIS
+            return
+        
+        # start sending logging events to control interface if running in background
+        if self.in_background:
+            host = '127.0.0.1:6543'
+            url = '/log/{0}'.format(equipment.short_name)
+            httpHandler = logging.handlers.HTTPHandler(host, url, method='POST')
+            httpHandler.setLevel(logging.DEBUG)
+            self.log.addHandler(httpHandler)
         
         # load notifier and start it
         self.notifier.equipment = equipment.short_name
         self.notify.connect(self.notifier.notify)
         self.notifier.start()
         
-        #notify start event
+        # notify start event
         self.notify.emit('start')
         
         # start data recorder thread
@@ -180,7 +200,7 @@ class ControlServer(QObject):
             self.log.error("Received unknown command: {0}".format(tcp_data))
     
     def _error_ocurred(self, socket_error):
-        self.log.error("TCP error ocurred: {0}".format(self.tcp_connection.errorString()))
+        self.log.error("TCP error occurred: {0}".format(self.tcp_connection.errorString()))
 
 
 class Notifier(QThread):
@@ -217,7 +237,7 @@ class Notifier(QThread):
     
     def _make_request(self, event):
         url = QUrl("{0}/notify_{1}/{2}".format(self.SERVER_URL, event, self.equipment))
-        self.log.debug("Sending notification for '{0}' event to {1}.".format(event, url))
+        self.log.debug("Sending notification for '{0}' event to {1}.".format(event, url.toString()))
         reply = self.manager.get(QNetworkRequest(url))
         reply.error.connect(self._reply_error)
         return reply
@@ -334,7 +354,7 @@ class InstrumentController(QThread):
         if packet.data:
             fields = [str(f.name) for f in packet.instrument_packet.fields]
             str_fields = ', '.join(["{0}: {1:g}".format(f, d) for f, d in zip(fields, packet.data)])
-            self.log.info("({0})".format(str_fields))
+            self.log.debug("({0})".format(str_fields))
     
     def on_error(self):
         self.log.error("Error occurred!")

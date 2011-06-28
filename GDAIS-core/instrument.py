@@ -17,7 +17,7 @@ class Instrument(object):
                         'little-endian': '<'
                     }
 
-    INSTR_PATH = '/home/pau/feina/UPC/projecte/code/GDAIS'
+    BASE_PATH = '/home/pau/feina/UPC/projecte/code/GDAIS/GDAIS-core'
     
     def __init__(self):
         self.filename = ""
@@ -33,7 +33,7 @@ class Instrument(object):
     def __init__(self,  filename):
         self.filename = filename
         if not os.path.isabs(filename):
-          self.filename = os.path.join(self.INSTR_PATH, filename)
+          self.filename = os.path.join(self.BASE_PATH, filename)
         with open(self.filename, "r") as fp:
             instr = json.load(fp)
         

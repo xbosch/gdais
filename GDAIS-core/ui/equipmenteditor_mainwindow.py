@@ -52,7 +52,7 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
                                             self.trUtf8(self.FILEDIALOG_FILTER),
                                             None)
         if filename:
-            self._load_equipment(Equipment(filename))
+            self._load_equipment(Equipment(str(filename)))
     
     @pyqtSignature("")
     def on_action_Save_triggered(self):
@@ -65,8 +65,8 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
                                                 self.trUtf8(self.FILEDIALOG_FILTER),
                                                 None)
         if filename:
-            self._dump_equipment(filename)
-            self.equipment.filename = filename
+            self._dump_equipment(str(filename))
+            self.equipment.filename = str(filename)
     
     @pyqtSignature("")
     def on_action_Save_As_triggered(self):
@@ -77,8 +77,8 @@ class EquipmentEditorMainWindow(QMainWindow, Ui_EquipmentEditorMainWindow):
                                             self.trUtf8(self.FILEDIALOG_FILTER),
                                             None)
         if filename:
-            self._dump_equipment(filename)
-            self.equipment.filename = filename
+            self._dump_equipment(str(filename))
+            self.equipment.filename = str(filename)
     
     @pyqtSignature("")
     def on_action_About_triggered(self):
