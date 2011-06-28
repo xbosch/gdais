@@ -9,7 +9,8 @@ from time import time
 
 class Recorder(QThread):
     
-    DATA_PATH = "data"
+    BASE_PATH = '/home/pau/feina/UPC/projecte/code/GDAIS/GDAIS-core'
+    DATA_PATH = os.path.join(BASE_PATH, 'data')
 
     def __init__(self):
         QThread.__init__(self)
@@ -21,7 +22,7 @@ class Recorder(QThread):
         self.log = logging.getLogger('GDAIS.Recorder')
 
     def begin(self, equipment):
-        dir = os.path.join(os.path.abspath(self.DATA_PATH), equipment.short_name)
+        dir = os.path.join(self.DATA_PATH, equipment.short_name)
         self.log.info("Data output directory: '{0}'".format(dir))
         if not os.path.exists(dir):
             # TODO: race condition if directory created between the two calls, quite unprobable

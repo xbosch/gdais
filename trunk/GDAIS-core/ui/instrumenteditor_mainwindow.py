@@ -45,7 +45,7 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
                                             self.trUtf8(self.FILEDIALOG_FILTER),
                                             None)
         if filename:
-            self.load_instrument(Instrument(filename))
+            self.load_instrument(Instrument(str(filename)))
     
     @pyqtSignature("")
     def on_action_Save_triggered(self):
@@ -58,8 +58,8 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
                                                 self.trUtf8(self.FILEDIALOG_FILTER),
                                                 None)
         if filename:
-            self.dump_instrument(filename)
-            self.instrument.filename = filename
+            self.dump_instrument(str(filename))
+            self.instrument.filename = str(filename)
     
     @pyqtSignature("")
     def on_action_Save_As_triggered(self):
@@ -70,8 +70,8 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
                                             self.trUtf8(self.FILEDIALOG_FILTER),
                                             None)
         if filename:
-            self.dump_instrument(filename)
-            self.instrument.filename = filename
+            self.dump_instrument(str(filename))
+            self.instrument.filename = str(filename)
     
     @pyqtSignature("")
     def on_action_About_triggered(self):
