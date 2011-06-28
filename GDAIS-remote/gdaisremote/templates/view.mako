@@ -1,26 +1,35 @@
 # -*- coding: utf-8 -*-
 <%inherit file="layout.mako"/>
+<a name="page-top"></a>
 
 <h1>${equip.name}</h1>
 
-<h2>Actions</h2>
-<ul>
+<ul id="nav" class="menu menu-horizontal">
   <li>
 % if equip.running:
-<a href="${request.route_url('stop', equip=equip.name)}">Stop ${equip.name}</a>
+  <a class="stop" href="${request.route_url('stop', equip=equip.name)}">Stop ${equip.name}</a>
 % else:
-<a href="${request.route_url('start', equip=equip.name)}">Start ${equip.name}</a>
+  <a class="start" href="${request.route_url('start', equip=equip.name)}">Start ${equip.name}</a>
 % endif
   </li>
-  <li><a href="${request.route_url('list')}">Back to equipment list</a></li>
+  <li><a href="#information">See equipment information</a></li>
+  <li><a href="#messages">See log messages</a></li>
+  <li><a href="#files">See acquired data files</a></li>
+  <li><a class="back" href="${request.route_url('list')}">Back to equipment list</a></li>
 </ul>
 
-<h2>Information</h2>
+<h2 id="information">Information</h2>
 <ul>
   <li><strong>status:</strong> ${status}</li>
+  <li><strong>equip file path:</strong> ${equip_path}</li>
 </ul>
+<a href="#page-top">page top</a>
+<hr />
 
-<h2>Messages</h2>
+<h2 id="messages">Messages</h2>
+% if not equip.running:
+  <p>GDAIS not running now. Showing last execution messages:</p>
+% endif
 <div id="dt">
   <div id="containter">
     <div class="dt_jui">
@@ -105,8 +114,24 @@
 </script>
 
 <hr />
-<h2>Debug</h2>
+<a href="#page-top">page top</a>
+
+<hr />
+<h2 id="files">Acquired data files</h2>
 <ul>
-  <li><strong>equip file path:</strong> ${equip_path}</li>
+  % for file in files:
+    <%
+      date = file['date'].strftime('%Y%m%d')
+      time = file['date'].strftime('%H%M%S')
+      params = dict(equip=equip.name, date=date, time=time)
+      download_url = request.route_url('download', **params)
+      delete_url = request.route_url('delete', **params)
+    %>
+    <li>
+      <a href="${download_url}">${file['date']}</a>
+      [<a href="${delete_url}">delete</a>]
+    </li>
+  % endfor
 </ul>
+<a href="#page-top">page top</a>
 

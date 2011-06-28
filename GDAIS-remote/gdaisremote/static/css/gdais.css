@@ -22,8 +22,9 @@ body {
 
 /* Equipments list */
 #equips {
-  width: 500px;
+  width: 400px;
   list-style: none;
+  font-size: 1.2em;
 }
 
 #equips li {
@@ -41,6 +42,53 @@ body {
 #equips .actions {
   width: auto;
   float: right;
+}
+
+/* Menu */
+ul.menu {
+}
+
+ul.menu-horizontal li {
+  display: inline;
+}
+
+ul.menu a {
+  border: 1px solid #999;
+  background-color: #DDD;
+  padding: 4px 10px;
+}
+
+ul.menu a:hover {
+  background-color: #EEE;
+}
+
+ul.menu a.start {
+  border: 1px solid #6B6;
+  background-color: #DED;
+  color: #3C3;
+}
+
+ul.menu a.start:hover {
+  background-color: #EFE;
+}
+
+ul.menu a.stop {
+  border: 1px solid #D99;
+  background-color: #EDD;
+  color: #D66;
+}
+
+ul.menu a.stop:hover {
+  background-color: #FEE;
+}
+
+ul.menu a.back {
+  border: 1px solid #06C;
+  background-color: #CDE;
+}
+
+ul.menu a.back:hover {
+  background-color: #DEF;
 }
 
 /* DataTables */

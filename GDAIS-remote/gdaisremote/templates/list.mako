@@ -3,6 +3,8 @@
 
 <h1>Equipment List</h1>
 
+<p>Select an equipment or click start to begin acquiring from that equipment.</p>
+
 <ul id="equips">
   % if equips:
     % for equip in equips:
