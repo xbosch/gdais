@@ -1,6 +1,8 @@
-from PyQt4.QtCore import pyqtSignal, QSocketNotifier, QThread, QTimer
+from PyQt4.QtCore import pyqtSignal, QEventLoop, QSocketNotifier, QThread, QTimer
+from PyQt4.QtNetwork import QTcpSocket
 
-import logging, serial
+import logging
+import serial
 
 import instrument
 from instrument import PacketFormat
@@ -20,8 +22,9 @@ class Connection(QThread):
     def create(conn, *args, **kwds):
         conn_type = instrument.ConnectionCfg.Type
         connection = {
+            conn_type.file:     FileConnection,
             conn_type.serial: SerialConnection,
-            conn_type.file:     FileConnection
+            conn_type.tcp:     TCPConnection
         }.get(conn.type, None)
         
         if not connection:
@@ -50,6 +53,9 @@ class Connection(QThread):
         
         # flag for when a new packet is found in the input buffer
         self.packet_found = False
+        
+        # whether to stop reading input data when a packet has been found (default: True)
+        self.break_on_packet_found = True
         
         # default logger
         self.log = logging.getLogger('GDAIS.Connection')
@@ -131,8 +137,14 @@ class Connection(QThread):
             if not data:
                 break
             
-            #txt_raw =  ' '.join(['0x{0:X}'.format(ord(d)) for d in data])
+            # DEBUG #
+            #if self.old_data:
+            #    debug_data = self.old_data + bytearray(data)
+            #else:
+            #    debug_data = bytearray(data)
+            #txt_raw =  ' '.join(['0x{0:X}'.format(d) for d in debug_data])
             #self.log.debug("0. input data: {0}".format(txt_raw))
+            # END DEBUG #
             
             #TODO: used when reading from file
             #self.usleep(100)
@@ -148,21 +160,38 @@ class Connection(QThread):
                 # already started a packet, append new data
                 self.packet += data
             
+            # DEBUG #
             #txt_raw =  ' '.join(['0x{0:X}'.format(d) for d in self.packet])
             #self.log.debug("1. packet after start: {0}".format(txt_raw))
+            # END DEBUG #
+            
+            # DEBUG #
+            #self.log.debug("last_index: {0}, self.packet: {1}".format(self.last_index, self.packet != bytearray()))
+            # END DEBUG #
             
             if self.last_index >= 0 and self.packet:
                 # packet start and some data already found, try to find its end
                 self._find_packet_end()
             
+            # DEBUG #
             #txt_raw =  ' '.join(['0x{0:X}'.format(d) for d in self.packet])
             #self.log.debug("2. packet after end: {0}".format(txt_raw))
+            # END DEBUG #
             
             if self.packet_found:
+                # DEBUG #
+                #txt_raw =  ' '.join(['0x{0:X}'.format(d) for d in self.old_data])
+                #self.log.debug("3. old data: {0}".format(txt_raw))
+                # END DEBUG #
+                
                 self.packet_found = False
-                break
+                if self.break_on_packet_found:
+                    break
             
+            # DEBUG #
             #self.log.debug("3. bytes in serial input buffer: {0}".format(self.io_conn.inWaiting()))
+            #self.log.debug("4. bytes in socket input buffer: {0}".format(self.io_conn.bytesAvailable()))
+            # END DEBUG #
     
     def _find_packet_start(self, data):
         """Find a new packet start in the given data array.
@@ -228,7 +257,8 @@ class Connection(QThread):
                     excess_data=self.packet[i + self.end_bytes_len:]
                 )
                 break
-        self.last_index += i
+        if self.last_index >= 0: # check packet end not found
+            self.last_index = i
     
     def _find_packet_end_next_start(self):
         """Find current packet end, using next packet start bytes mark.
@@ -252,7 +282,8 @@ class Connection(QThread):
                     excess_data=self.packet[i:]
                 )
                 break
-        self.last_index += i
+        if self.last_index >= 0: # check packet end not found
+            self.last_index = i
     
     def _find_packet_end_len(self):
         """Find current packet end, using its length.
@@ -387,6 +418,47 @@ class SerialConnection(Connection):
             self.io_conn.flushInput()
             self.log.info("Closing serial port")
             self.io_conn.close()
+        Connection.quit(self)
+
+
+class TCPConnection(Connection):
+    
+    def __init__(self):
+        Connection.__init__(self)
+        
+        # read all data in buffer before exiting self.read_data
+        self.break_on_packet_found = False
+    
+    def begin(self,  instrument):
+        self.log = logging.getLogger('GDAIS.'+instrument.short_name+'.TCPConnection')
+        self.instrument = instrument
+        
+        self.io_conn = QTcpSocket()
+        self.io_conn.connected.connect(self.connected)
+        self.io_conn.error.connect(self.connection_error)
+        self.io_conn.connectToHost(instrument.connection.tcp_host,
+            instrument.connection.tcp_port)
+    
+    def connected(self):
+        self.io_conn.readyRead.connect(self.read_data)
+        Connection.begin(self, self.instrument)
+    
+    def connection_error(self, socket_error):
+        if socket_error == QTcpSocket.RemoteHostClosedError:
+            self.log.info(self.io_conn.errorString())
+        else:
+            self.log.error(self.io_conn.errorString())
+            self.error_occurred.emit()
+        
+    def quit(self):
+        if self.io_conn and self.io_conn.state() == QTcpSocket.ConnectedState:
+            loop = QEventLoop()
+            self.io_conn.disconnected.connect(loop.quit)
+            self.io_conn.disconnectFromHost()
+            self.log.debug("Entered disconnect state...")
+            if self.io_conn.state() == QTcpSocket.ConnectedState:
+                loop.exec_()
+            self.log.info("Done")
         Connection.quit(self)
 
 
