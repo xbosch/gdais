@@ -113,11 +113,12 @@
   });
 </script>
 
-<hr />
+<br />
 <a href="#page-top">page top</a>
 
 <hr />
 <h2 id="files">Acquired data files</h2>
+% if files:
 <ul>
   % for file in files:
     <%
@@ -133,5 +134,8 @@
     </li>
   % endfor
 </ul>
+% else:
+  <p>No files found.</p>
+% endif
 <a href="#page-top">page top</a>
 

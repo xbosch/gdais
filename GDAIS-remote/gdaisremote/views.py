@@ -45,18 +45,23 @@ def view_equip(request):
 
     status = 'running' if equip.running else 'stopped'
 
-    test = re.compile("\.h5$", re.IGNORECASE)
     files_path = os.path.join(data_path, equip.name)
-    files = sorted(os.listdir(files_path), reverse=True)
-    filenames = filter(test.search, files)
+    try:
+        files = sorted(os.listdir(files_path), reverse=True)
+    except OSError:
+        # there is no instrument folder, no data has been acquired
+        files = []
+    else:
+        test = re.compile("\.h5$", re.IGNORECASE)
+        filenames = filter(test.search, files)
 
-    # list of 'sidamon_20110628_152029.h5' -> datetime(2011, 6, 28, 15, 20, 29)
-    dates = [datetime.strptime(
-                ''.join(os.path.splitext(f)[0].split(name+'_')[1:]),
-                '%Y%m%d_%H%M%S')
-             for f in filenames]
+        # list of 'sidamon_20110628_152029.h5' -> datetime(2011, 6, 28, 15, 20, 29)
+        dates = [datetime.strptime(
+                    ''.join(os.path.splitext(f)[0].split(name+'_')[1:]),
+                    '%Y%m%d_%H%M%S')
+                 for f in filenames]
 
-    files = [dict(name=f, date=d) for f, d in zip(filenames, dates)]
+        files = [dict(name=f, date=d) for f, d in zip(filenames, dates)]
 
     return dict(equip=equip, equip_path=equip_path, status=status, files=files)
 
