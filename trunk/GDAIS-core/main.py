@@ -1,5 +1,5 @@
 from PyQt4.QtCore import pyqtSignal, QCoreApplication, QEventLoop, QObject, QSignalMapper, QString, QThread, QTimer, QUrl
-from PyQt4.QtNetwork import QNetworkAccessManager, QNetworkRequest, QTcpServer
+from PyQt4.QtNetwork import QNetworkAccessManager, QNetworkRequest, QTcpServer, QTcpSocket
 
 import argparse
 from collections import deque
@@ -53,6 +53,9 @@ class GDAIS(QCoreApplication):
 
         # create data recorder thread
         self.recorder = Recorder()
+        
+        # whether exit sequence has started
+        self.exiting = False
         
         # schedule start event to be run when the execution loop starts
         QTimer.singleShot(0, self.start)
@@ -119,34 +122,36 @@ class GDAIS(QCoreApplication):
                     instr_ctrl.begin()
     
     def quit(self):
-        self.log.info("Exiting!")
+        if not self.exiting:
+            self.exiting = True
+            self.log.info("Exiting!")
 
-        # finish all running instrument initialization threads
-        for init_ctrl in self.instrument_init_controllers:
-            if init_ctrl.isRunning():
-                init_ctrl.quit()
-                init_ctrl.wait()
-        
-        # finish all running instrument controller threads
-        for instr_ctrl in self.instrument_controllers:
-            if instr_ctrl.isRunning():
-                instr_ctrl.quit()
-                instr_ctrl.wait()
-        
-        # finish the data recorder thread if running
-        if self.recorder.isRunning():
-            self.log.debug("Closing data recorder...")
-            self.recorder.quit()
-            self.recorder.wait()
-        
-        # finish notifier thread
-        if self.notifier.isRunning():
-            self.log.debug("Closing notifier...")
-            self.notifier.quit()
-            self.notifier.wait()
-        
-        self.log.info("Goodbye!")
-        QCoreApplication.quit()
+            # finish all running instrument initialization threads
+            for init_ctrl in self.instrument_init_controllers:
+                if init_ctrl.isRunning():
+                    init_ctrl.quit()
+                    init_ctrl.wait()
+            
+            # finish all running instrument controller threads
+            for instr_ctrl in self.instrument_controllers:
+                if instr_ctrl.isRunning():
+                    instr_ctrl.quit()
+                    instr_ctrl.wait()
+            
+            # finish the data recorder thread if running
+            if self.recorder.isRunning():
+                self.log.debug("Closing data recorder...")
+                self.recorder.quit()
+                self.recorder.wait()
+            
+            # finish notifier thread
+            if self.notifier.isRunning():
+                self.log.debug("Closing notifier...")
+                self.notifier.quit()
+                self.notifier.wait()
+            
+            self.log.info("Goodbye!")
+            QCoreApplication.quit()
 
 
 class ControlServer(QObject):
@@ -180,6 +185,14 @@ class ControlServer(QObject):
             self.timer.start(timeout * 1000) # msec
     
     def quit(self):
+        if self.tcp_connection and self.tcp_connection.state() == QTcpSocket.ConnectedState:
+            loop = QEventLoop()
+            self.tcp_connection.disconnected.connect(loop.quit)
+            self.tcp_connection.disconnectFromHost()
+            self.log.debug("Entering disconnect state...")
+            if self.tcp_connection.state() == QTcpSocket.ConnectedState:
+                loop.exec_()
+            self.log.debug("Done waiting, closing server...")
         if self.tcp_server.isListening():
             self.tcp_server.close()
         self.quit_command_received.emit()
@@ -200,7 +213,10 @@ class ControlServer(QObject):
             self.log.error("Received unknown command: {0}".format(tcp_data))
     
     def _error_ocurred(self, socket_error):
-        self.log.error("TCP error occurred: {0}".format(self.tcp_connection.errorString()))
+        if socket_error == QTcpSocket.RemoteHostClosedError:
+            self.log.info(self.tcp_connection.errorString())
+        else:
+            self.log.error(self.tcp_connection.errorString())
 
 
 class Notifier(QThread):
@@ -229,7 +245,6 @@ class Notifier(QThread):
         reply.finished.connect(loop.quit)
         loop.exec_()
         
-        del self.manager
         QThread.quit(self)
     
     def notify(self, event):

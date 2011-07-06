@@ -115,8 +115,9 @@ class ConnectionCfg(object):
     
     # Connection types
     class Type:
-        serial = "Serial"
         file = "File"
+        serial = "Serial"
+        tcp = "TCP"
 
     @staticmethod
     def create(conn=None, *args, **kwds):
@@ -133,8 +134,9 @@ class ConnectionCfg(object):
                 
             else:
                 connection = {
+                    ConnectionCfg.Type.file:     FileConnectionCfg,
                     ConnectionCfg.Type.serial: SerialConnectionCfg,
-                    ConnectionCfg.Type.file:     FileConnectionCfg
+                    ConnectionCfg.Type.tcp:    TCPConnectionCfg
                 }.get(conn_type, None)
                 
                 if not connection:
@@ -149,6 +151,22 @@ class ConnectionCfg(object):
     def __init__(self, conn=None):
         # ConnectionCfg can't be initialized, use factory method create()
         raise NotImplementedError
+
+
+class FileConnectionCfg(ConnectionCfg):
+    
+    def __init__(self, conn):
+        self.type = ConnectionCfg.Type.file
+        if conn and type(conn) is dict:
+            self.filename = conn['filename']
+        else:
+            self.filename = ''
+    
+    def dump(self):
+        return {
+                'type': self.type, 
+                'filename': self.filename
+            }
 
 
 class SerialConnectionCfg(ConnectionCfg):
@@ -180,20 +198,24 @@ class SerialConnectionCfg(ConnectionCfg):
                 }
 
 
-class FileConnectionCfg(ConnectionCfg):
+class TCPConnectionCfg(ConnectionCfg):
     
     def __init__(self, conn):
-        self.type = ConnectionCfg.Type.file
+        self.type = ConnectionCfg.Type.tcp
         if conn and type(conn) is dict:
-            self.filename = conn['filename']
+            self.tcp_host = conn['host']
+            self.tcp_port = conn['port']
         else:
-            self.filename = ''
-    
+            # load defaults
+            self.tcp_host = "localhost"
+            self.tcp_port = 80
+
     def dump(self):
-        return {
-                'type': self.type, 
-                'filename': self.filename
-            }
+            return {
+                    'type': self.type, 
+                    'host': self.tcp_host, 
+                    'port': self.tcp_port
+                }
 
 
 class PacketFormat(object):

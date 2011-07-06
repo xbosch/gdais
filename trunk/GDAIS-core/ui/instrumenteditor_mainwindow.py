@@ -316,20 +316,29 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         self.clear_connection()
         
         conn = self.instrument.connection
+            
+        if conn.type == ConnectionCfg.Type.file:
+            self.conn_file_group.setEnabled(True)
+            self.conn_file_name.setText(conn.filename)
         
-        if conn.type == ConnectionCfg.Type.serial:
+        elif conn.type == ConnectionCfg.Type.serial:
             self.conn_serial_group.setEnabled(True)
             self.conn_serial_port.setText(conn.serial_port)
             self.conn_serial_baudrate.setText(str(conn.baudrate))
             self.conn_serial_data_bits.setText(str(conn.data_bits))
             self.conn_serial_parity.setText(conn.parity)
             self.conn_serial_stop_bits.setText(str(conn.stop_bits))
-            
-        elif conn.type == ConnectionCfg.Type.file:
-            self.conn_file_group.setEnabled(True)
-            self.conn_file_name.setText(conn.filename)
+        
+        elif conn.type == ConnectionCfg.Type.tcp:
+            self.conn_tcp_group.setEnabled(True)
+            self.conn_tcp_host.setText(conn.tcp_host)
+            self.conn_tcp_port.setText(str(conn.tcp_port))
     
     def clear_connection(self):
+        
+        self.conn_file_group.setEnabled(False)
+        self.conn_file_name.setText('')
+        
         self.conn_serial_group.setEnabled(False)
         self.conn_serial_port.setText('')
         self.conn_serial_baudrate.setText('')
@@ -337,21 +346,26 @@ class InstrumentEditorMainWindow(QMainWindow, Ui_InstrumentEditorMainWindow):
         self.conn_serial_parity.setText('')
         self.conn_serial_stop_bits.setText('')
         
-        self.conn_file_group.setEnabled(False)
-        self.conn_file_name.setText('')
+        self.conn_tcp_group.setEnabled(False)
+        self.conn_tcp_host.setText('')
+        self.conn_tcp_port.setText('')
     
     def save_connection(self):
         conn = self.instrument.connection
+            
+        if conn.type == ConnectionCfg.Type.file:
+            conn.filename = str(self.conn_file_name.text())
         
-        if conn.type == ConnectionCfg.Type.serial:
+        elif conn.type == ConnectionCfg.Type.serial:
             conn.serial_port = str(self.conn_serial_port.text())
             conn.baudrate = int(self.conn_serial_baudrate.text())
             conn.data_bits = int(self.conn_serial_data_bits.text())
             conn.parity = str(self.conn_serial_parity.text())
             conn.stop_bits = int(self.conn_serial_stop_bits.text())
-            
-        elif conn.type == ConnectionCfg.Type.file:
-            conn.filename = str(self.conn_file_name.text())
+        
+        elif conn.type == ConnectionCfg.Type.tcp:
+            conn.tcp_host = str(self.conn_tcp_host.text())
+            conn.tcp_port = int(self.conn_tcp_port.text())
 
     def load_instrument(self, instrument):
         self.clear_instrument()

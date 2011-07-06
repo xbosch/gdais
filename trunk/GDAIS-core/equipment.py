@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Module implementing the instrument model.
+Module implementing the equipment model.
 """
 import json, logging
 
