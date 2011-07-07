@@ -77,10 +77,11 @@ class ProxyServer(TCPServer):
     reception_finished = pyqtSignal()
     
     def __init__(self, dl_num):
-        TCPServer.__init__(self, port=20000+dl_num)
+        port = 20000 + dl_num
+        TCPServer.__init__(self, port=port)
         
         # logging instance
-        self.log = logging.getLogger('SMIGOL.ProxyServer.{0}'.format(port))
+        self.log = logging.getLogger('SMIGOL.ProxyServer.{0}'.format(self.tcp_port))
         
         # number of the datalogger being read
         self.dl = dl_num
@@ -150,7 +151,7 @@ class ControlServer(TCPServer):
         TCPServer.__init__(self, port=20000)
         
         # logging instance
-        self.log = logging.getLogger('SMIGOL.ControlServer.{0}'.format(port))
+        self.log = logging.getLogger('SMIGOL.ControlServer.{0}'.format(self.tcp_port))
 
         # whether all proxies have finished sending data
         self.all_finished = False
