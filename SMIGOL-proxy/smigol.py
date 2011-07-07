@@ -117,22 +117,35 @@ class ProxyServer(TCPServer):
                         data = fp.read(10)
                 
                 self.tcp_connection.write("Finished!\n".format(self.tcp_port))
+            # END DEBUGGING CODE
 
-            ser = serial.Serial(SERIAL_PORT, timeout=0)
+            ser = serial.Serial(SERIAL_PORT, timeout=1)
             self.log.debug("Serial port open: {0}".format(ser.portstr))
             datalogger = "DL{0}".format(self.dl)
             self.log.debug("Sending '{0}' through serial port".format(datalogger))
             ser.write(datalogger)
             
+            # DEBUG
+            #txt = "Acquiring SMIGOL data! (by {0})\n"
+            #self.tcp_connection.write(txt.format(self.tcp_port))
+                
             buff = ''
             while not buff.endswith(DL_END_MARK):
                 data = ser.read(BUFFER_SIZE)
                 if data:
-                    self.log.debug("Rx: {0}".format([c for c in data]))
+                    #self.log.debug("Rx: {0}".format([c for c in data]))
                     self.tcp_connection.write(data)
-                    buff += data
+                    buff = buff[-BUFFER_SIZE:] + data
+
+                    # wait
+                    loop = QEventLoop()
+                    QTimer.singleShot(0, loop.quit)
+                    loop.exec_()
             
             self.log.info("Acquisition finished")
+
+            # DEBUG
+            #self.tcp_connection.write("Finished!\n".format(self.tcp_port))
             
         else:
             self.log.error("Tried to start acquiring before establishing a connection")
