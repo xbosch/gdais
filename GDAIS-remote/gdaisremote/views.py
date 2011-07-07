@@ -1,4 +1,6 @@
+from collections import namedtuple
 from datetime import datetime
+import logging
 import mimetypes
 import os
 import re
@@ -38,12 +40,17 @@ def view_equip(request):
     equip_path = os.path.join(equips_path, name + '.json')
 
     dbsession = DBSession()
-    equip = dbsession.query(EquipmentModel).filter_by(name=name).one()
-    if not equip:
+    try:
+        equip = dbsession.query(EquipmentModel).filter_by(name=name).one()
+    except NoResultFound:
         request.session.flash("Equipment '{0}' not found".format(name))
         return HTTPFound(location=request.route_url('list'))
 
     status = 'running' if equip.running else 'stopped'
+
+    Level = namedtuple('Level', 'num name default')
+    log_levels = [Level(l, logging.getLevelName(l), l==equip.log_lvl)
+                    for l in range(10, 60, 10)]
 
     files_path = os.path.join(data_path, equip.name)
     try:
@@ -61,9 +68,21 @@ def view_equip(request):
                     '%Y%m%d_%H%M%S')
                  for f in filenames]
 
-        files = [dict(name=f, date=d) for f, d in zip(filenames, dates)]
+        sizes = [_sizeof_fmt(os.path.getsize(os.path.join(files_path, f)))
+                    for f in filenames]
 
-    return dict(equip=equip, equip_path=equip_path, status=status, files=files)
+        files = [dict(name=f, date=d, size=s)
+                    for f, d, s in zip(filenames, dates, sizes)]
+
+    return dict(equip=equip, equip_path=equip_path, status=status,
+                log_levels=log_levels, files=files)
+
+# http://blogmag.net/blog/read/38/Print_human_readable_file_size
+def _sizeof_fmt(num):
+    for x in ['bytes', 'kB', 'MB', 'GB', 'TB']:
+        if num < 1024.0:
+            return "%3.1f%s" % (num, x)
+        num /= 1024.0
 
 
 @view_config(route_name='view_log', renderer='json')
@@ -75,6 +94,44 @@ def view_log_equip(request):
             [l.date.strftime('%Y-%m-%d'), l.date.strftime('%H:%M:%S,%f')[:-3],
                 l.name, l.levelname, l.msg]
             for l in equip.logs]}
+
+@view_config(route_name='set_log_level', renderer='json')
+def set_log_level(request):
+    try:
+        level = int(request.matchdict['level'])
+    except ValueError:
+        return {'status': 'KO', 'error': "Level should be an integer value"}
+
+    if not level in range(10, 60, 10):
+        return {'status': 'KO', 'error': "Level should be 10, 20, 30, 40 or 50"}
+
+    name = request.matchdict['equip']
+    dbsession = DBSession()
+    try:
+        equip = dbsession.query(EquipmentModel).filter_by(name=name).one()
+    except NoResultFound:
+        return {'status': 'KO', 'error': "Equipment '{0}' not found".format(name)}
+
+    if equip.running:
+        try:
+            # notify GDAIS-core
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect(('localhost', 12345))
+            s.send(bytes('set_log_level {0}'.format(level)))
+            s.shutdown(socket.SHUT_WR)
+            s.close()
+
+            # save new log level to database
+            equip.log_lvl = level
+            dbsession.add(equip)
+
+            txt = "'set_log_level {0}' command sent to '{1}'"
+            return {'status': 'OK', 'info': txt.format(level, name)}
+
+        except socket.error as msg:
+            return {'status': 'KO', 'error': msg}
+    else:
+        return {'status': 'KO', 'error': "Equipment {0} not running".format(name)}
 
 
 @view_config(route_name='log')
@@ -111,10 +168,13 @@ def start_equip(request):
     main = os.path.join(gdais_path, 'run.sh')
 
     dbsession = DBSession()
-    equip = dbsession.query(EquipmentModel).filter_by(name=name).one()
-    if not equip:
+    try:
+        equip = dbsession.query(EquipmentModel).filter_by(name=name).one()
+    except NoResultFound:
         request.session.flash("Equipment '{0}' not found".format(name))
-    elif not equip.running:
+        return HTTPFound(location=request.route_url('list'))
+
+    if not equip.running:
         #print "[GDAIS-remote] DEBUG: Calling:", main, '-d', equip_path
         retcode = subprocess.call([main, '-d', equip_path])
 
@@ -122,6 +182,10 @@ def start_equip(request):
             # delete old log entries
             dbsession.query(LogModel).filter_by(equip_id=equip.id).delete()
 
+            # reset log_lvl to DEBUG
+            equip.log_lvl = 10
+            dbsession.add(equip)
+            
             request.session.flash("Equipment '{0}' process started".format(name))
 
         elif retcode == 1:
@@ -152,16 +216,18 @@ def notify_equip_start(request):
     return {'status': 'OK', 'info': name + ' start notified'}
 
 
-@view_config(route_name='stop', renderer='stop.mako')
+@view_config(route_name='stop')
 def stop_equip(request):
     name = request.matchdict['equip']
 
     dbsession = DBSession()
-    equip = dbsession.query(EquipmentModel).filter_by(name=name).one()
-    if not equip:
+    try:
+        equip = dbsession.query(EquipmentModel).filter_by(name=name).one()
+    except NoResultFound:
         request.session.flash("Equipment {0} not found".format(name))
         return HTTPFound(location=request.route_url('list'))
-    elif equip.running:
+
+    if equip.running:
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect(('localhost', 12345))

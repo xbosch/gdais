@@ -5,6 +5,7 @@ import argparse
 from collections import deque
 import logging
 import logging.handlers
+import re
 import os
 import sys
 
@@ -40,6 +41,9 @@ class GDAIS(QCoreApplication):
                             filename=os.path.join(self.BASE_PATH, 'debug.log'),
                             filemode='w')
         self.log = logging.getLogger("GDAIS")
+
+        # HTTP handler for remote logging
+        self.httpHandler = None
         
         # control server for GDAIS remote control
         self.control_server = ControlServer()
@@ -65,6 +69,7 @@ class GDAIS(QCoreApplication):
         
         # start server for remote control
         self.control_server.quit_command_received.connect(self.quit)
+        self.control_server.logging_command_received.connect(self.set_logging_level)
         self.control_server.start()
 
         # load equipment from given file
@@ -76,13 +81,18 @@ class GDAIS(QCoreApplication):
             QTimer.singleShot(0, self.quit) # exit GDAIS
             return
         
-        # start sending logging events to control interface if running in background
         if self.in_background:
+            # start sending logs to control interface if running in background
             host = '127.0.0.1:6543'
             url = '/log/{0}'.format(equipment.short_name)
-            httpHandler = logging.handlers.HTTPHandler(host, url, method='POST')
-            httpHandler.setLevel(logging.DEBUG)
-            self.log.addHandler(httpHandler)
+            self.httpHandler = logging.handlers.HTTPHandler(host, url, method='POST')
+            self.httpHandler.setLevel(logging.DEBUG)
+            self.log.addHandler(self.httpHandler)
+        else:
+            # otherwise, send log output to console
+            consoleHandler = logging.StreamHandler()
+            consoleHandler.setLevel(logging.DEBUG)
+            self.log.addHandler(consoleHandler)
         
         # load notifier and start it
         self.notifier.equipment = equipment.short_name
@@ -153,8 +163,18 @@ class GDAIS(QCoreApplication):
             self.log.info("Goodbye!")
             QCoreApplication.quit()
 
+    def set_logging_level(self, new_level):
+        if self.httpHandler:
+            level_name = logging.getLevelName(new_level)
+            self.httpHandler.setLevel(logging.DEBUG)
+            self.log.info("Logging level set to {0}".format(level_name))
+            self.httpHandler.setLevel(new_level)
+
 
 class ControlServer(QObject):
+    
+    # Signal to inform that the set logging level command has been received
+    logging_command_received = pyqtSignal(int)
     
     # Signal to inform that the quit command has been received and the system should exit
     quit_command_received = pyqtSignal()
@@ -167,6 +187,9 @@ class ControlServer(QObject):
         
         # TCP server to listen for control commands
         self.tcp_server = QTcpServer()
+
+        # regexp to check if command is 'set_log_level'
+        self.valid_loglevel = re.compile(r"^set_log_level (\d?0)$")
     
     def start(self):
         self.log.info("Starting TCP server...")
@@ -179,7 +202,7 @@ class ControlServer(QObject):
 
             # define a timer to auto-quit the app after 10 sec
             timeout = 10 # seconds
-            self.log.warn("GDAIS will run for {0} seconds and then die.".format(timeout))
+            self.log.warn("GDAIS will run for {0} seconds and then die".format(timeout))
             self.timer = QTimer()
             self.timer.timeout.connect(self.quit)
             self.timer.start(timeout * 1000) # msec
@@ -209,6 +232,14 @@ class ControlServer(QObject):
         if tcp_data == 'quit':
             self.log.info("Received 'quit' command")
             self.quit()
+        elif self.valid_loglevel.match(tcp_data):
+            self.log.info("Received 'set_log_level' command")
+            try:
+                new_level = int(self.valid_loglevel.match(tcp_data).group(1))
+            except ValueError:
+                self.log.exception("Level has to be an integer value")
+            else:
+                self.logging_command_received.emit(new_level)
         else:
             self.log.error("Received unknown command: {0}".format(tcp_data))
     
@@ -252,7 +283,7 @@ class Notifier(QThread):
     
     def _make_request(self, event):
         url = QUrl("{0}/notify_{1}/{2}".format(self.SERVER_URL, event, self.equipment))
-        self.log.debug("Sending notification for '{0}' event to {1}.".format(event, url.toString()))
+        self.log.debug("Sending notification for '{0}' event to {1}".format(event, url.toString()))
         reply = self.manager.get(QNetworkRequest(url))
         reply.error.connect(self._reply_error)
         return reply

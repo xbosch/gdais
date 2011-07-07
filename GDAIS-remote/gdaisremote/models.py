@@ -28,11 +28,13 @@ class EquipmentModel(Base):
     name = Column(Unicode(255), unique=True)
     desc = Column(Unicode)
     running = Column(Boolean)
+    log_lvl = Column(Integer)
 
     def __init__(self, name, desc):
         self.name = name
         self.desc = desc
         self.running = False
+        self.log_lvl = 10 # DEBUG
 
 class LogModel(Base):
     __tablename__ = 'logs'

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 <%inherit file="layout.mako"/>
+<script src="${request.static_url('gdaisremote:static/datatables/js/jquery.js')}"></script>
 <a name="page-top"></a>
 
 <h1>${equip.name}</h1>
@@ -29,6 +30,21 @@
 <h2 id="messages">Messages</h2>
 % if not equip.running:
   <p>GDAIS not running now. Showing last execution messages:</p>
+% else:
+  <p>Debug level:
+    <select id="debug_level">
+      % for l in log_levels:
+        <option value="${l.num}" ${'selected' if l.default else ''}>${l.name}</option>
+      % endfor
+    </select>
+  </p>
+  <script>
+    $('#debug_level').change(function() {
+      $.get('/set_log_level/${equip.name}/'+$(this).attr('value'), function(data){
+        if (data.status != "OK") { alert("ERROR: "+data.error); }
+      });
+    });
+  </script>
 % endif
 <div id="dt">
   <div id="containter">
@@ -50,7 +66,6 @@
   </div>
 </div>
 
-<script src="${request.static_url('gdaisremote:static/datatables/js/jquery.js')}"></script>
 <script src="${request.static_url('gdaisremote:static/datatables/js/jquery.dataTables.js')}"></script>
 <script>
   $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallback, bStandingRedraw )
@@ -131,6 +146,7 @@
     <li>
       <a href="${download_url}">${file['date']}</a>
       [<a href="${delete_url}">delete</a>]
+      ${file['size']}
     </li>
   % endfor
 </ul>
