@@ -28,6 +28,7 @@ def main(global_config, **settings):
     config.add_route('notify_quit', '/notify_quit/{equip}')
     config.add_route('view', '/view/{equip}')
     config.add_route('view_log', '/view_log/{equip}', xhr=True)
+    config.add_route('set_log_level', '/set_log_level/{equip}/{level}', xhr=True)
     config.add_route('log', '/log/{equip}')
     config.add_route('download', '/download/{equip}/{date}/{time}')
     config.add_route('delete', '/delete/{equip}/{date}/{time}')
