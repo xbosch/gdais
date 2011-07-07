@@ -56,7 +56,7 @@ def view_equip(request):
     try:
         files = sorted(os.listdir(files_path), reverse=True)
     except OSError:
-        # there is no instrument folder, no data has been acquired
+        # there is no equipment folder, no data has been acquired
         files = []
     else:
         test = re.compile("\.h5$", re.IGNORECASE)
