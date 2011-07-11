@@ -134,6 +134,8 @@ class GDAIS(QCoreApplication):
     def quit(self):
         if not self.exiting:
             self.exiting = True
+
+            self.set_logging_level(logging.DEBUG)
             self.log.info("Exiting!")
 
             # finish all running instrument initialization threads
@@ -279,7 +281,7 @@ class Notifier(QThread):
         QThread.quit(self)
     
     def notify(self, event):
-        reply = self._make_request(event)
+        self._make_request(event)
     
     def _make_request(self, event):
         url = QUrl("{0}/notify_{1}/{2}".format(self.SERVER_URL, event, self.equipment))
@@ -292,6 +294,7 @@ class Notifier(QThread):
         self.log.debug("Reply received: {0}".format(network_reply.readAll()))
     
     def _reply_error(self, network_error):
+        # TODO check if it is really an error
         self.log.error("Error receiving reply: {0}".format(network_error))
 
 
@@ -481,7 +484,7 @@ class InstrumentInitialization(BlockingInstrumentController):
     def on_new_packet_parsed(self, packet):
         if not self.exiting:
             # check init command reply
-            # TODO: TEMP #
+            # TODO: DEBUG #
             self.log.debug("Received packet:")
             InstrumentController.log_new_packet_parsed(self, packet)
             self.log.debug("Expected reply:")
@@ -489,7 +492,7 @@ class InstrumentInitialization(BlockingInstrumentController):
             str_fields = ', '.join(["{0}: {1}".format(f, d)
                                                     for f, d in zip(fields, self.current_command.reply.values)])
             self.log.debug("({0})".format(str_fields))
-            # END TEMP #
+            # END DEBUG #
             
             # if no reply received stop initialization
             if False:
