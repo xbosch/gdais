@@ -25,7 +25,7 @@ class Recorder(QThread):
         dir = os.path.join(self.DATA_PATH, equipment.short_name)
         self.log.info("Data output directory: '{0}'".format(dir))
         if not os.path.exists(dir):
-            # TODO: race condition if directory created between the two calls, quite unprobable
+            # XXX: race condition if directory created between the two calls, quite unprobable
             os.makedirs(dir)
         
         txt = "{0}_{1}.h5"
@@ -48,9 +48,6 @@ class Recorder(QThread):
                     packet.table = self.h5file.createTable(group, short_name, format, packet.name)
             self.start()
 
-    def run(self):
-        self.exec_()
-    
     def quit(self):
         if self.h5file:
             self.h5file.close()
