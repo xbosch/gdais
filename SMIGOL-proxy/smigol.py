@@ -128,6 +128,8 @@ class ProxyServer(TCPServer):
             # DEBUG
             #txt = "Acquiring SMIGOL data! (by {0})\n"
             #self.tcp_connection.write(txt.format(self.tcp_port))
+
+            start_time = time.time()
                 
             buff = ''
             while not buff.endswith(DL_END_MARK):
@@ -142,7 +144,8 @@ class ProxyServer(TCPServer):
                     QTimer.singleShot(0, loop.quit)
                     loop.exec_()
             
-            self.log.info("Acquisition finished")
+            txt = "Acquisition finished ({0} seconds)"
+            self.log.info(txt.format(time.time()-start_time))
 
             # DEBUG
             #self.tcp_connection.write("Finished!\n".format(self.tcp_port))
@@ -216,7 +219,6 @@ if __name__ == "__main__":
     app = QCoreApplication(sys.argv)
 
     control_server = ControlServer()
-    control_server.quit_app.connect(app.quit)
     app.aboutToQuit.connect(control_server.disconnect)
     QTimer.singleShot(0, control_server.start)
     
@@ -230,7 +232,15 @@ if __name__ == "__main__":
         proxies[i] = proxy
     
     control_server.start_received.connect(proxies[0].begin_acquiring)
-    proxies[3].reception_finished.connect(control_server.last_finished)
+
+    # EXIT METHOD
+    # OPTION 1: wait for 'quit' command to exit when all finished
+    #proxies[3].reception_finished.connect(control_server.last_finished)
+    #control_server.quit_app.connect(app.quit)
+
+    # OPTION 2: exit automatically when all finished
+    proxies[3].reception_finished.connect(app.quit)
+    # END EXIT METHOD
 
     # run!
     log.info('starting event loop...')
