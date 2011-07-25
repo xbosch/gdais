@@ -97,29 +97,12 @@ class ProxyServer(TCPServer):
             self.log.info("Starting acquisition")
             self.started = True
             
-            if False: # READING FROM FILE, FOR DEBUGGING
-                txt = "Acquiring SMIGOL data! (by {0})\n"
-                self.tcp_connection.write(txt.format(self.tcp_port))
-                
-                with open('test.bin', 'r') as fp:
-                    # read first bytes
-                    data = fp.read(10)
-                    while data:
-                        # write
-                        self.tcp_connection.write(data)
-                        
-                        # wait
-                        loop = QEventLoop()
-                        QTimer.singleShot(0, loop.quit)
-                        loop.exec_()
+            try:
+                ser = serial.Serial(SERIAL_PORT, timeout=1)
+            except serial.serialutil.SerialException:
+                self.log.exception("Could not open serial port, ending acquisition...")
+                return
 
-                        # read more
-                        data = fp.read(10)
-                
-                self.tcp_connection.write("Finished!\n".format(self.tcp_port))
-            # END DEBUGGING CODE
-
-            ser = serial.Serial(SERIAL_PORT, timeout=1)
             self.log.debug("Serial port open: {0}".format(ser.portstr))
             datalogger = "DL{0}".format(self.dl)
             self.log.debug("Sending '{0}' through serial port".format(datalogger))
