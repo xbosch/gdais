@@ -1,0 +1,102 @@
+{
+ "byte_order": "big-endian", 
+ "rx_packets": {
+  "90": {
+   "fields": [
+    {
+     "type": "uint8", 
+     "name": "Satellite number"
+    }, 
+    {
+     "type": "int32", 
+     "name": "EMPTY_FIELD"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Signal Level"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Code Phase"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Doppler"
+    }, 
+    {
+     "type": "float64", 
+     "name": "Time"
+    }
+   ], 
+   "name": "Raw Measurement Data"
+  }, 
+  "92": {
+   "fields": [
+    {
+     "type": "uint8", 
+     "name": "Satellite number"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "Channel"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "Acquisition Flag"
+    }, 
+    {
+     "type": "uint8", 
+     "name": "Ephemeris Flag"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Signal Level"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Time Last"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Elevation"
+    }, 
+    {
+     "type": "float32", 
+     "name": "Azimuth"
+    }, 
+    {
+     "type": "int32", 
+     "name": "EMPTY_FIELD"
+    }
+   ], 
+   "name": "Satellite Tracking Status"
+  }
+ }, 
+ "name": "SMIGOL GPS 4", 
+ "short_name": "smigol_gps_4", 
+ "connection": {
+  "host": "localhost", 
+  "type": "TCP", 
+  "port": 20004
+ }, 
+ "packet_format": {
+  "rx_format": [
+   "Start bytes", 
+   "Packet num", 
+   "Packet fields", 
+   "End bytes"
+  ], 
+  "tx_format": [
+   "Packet num", 
+   "Packet fields"
+  ], 
+  "start_bytes": [
+   16
+  ], 
+  "end_bytes": [
+   16, 
+   3
+  ]
+ }, 
+ "tx_packets": {}
+}

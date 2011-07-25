@@ -1,0 +1,30 @@
+{
+ "instruments": [
+  {
+   "operation_commands": [], 
+   "init_commands": [], 
+   "operation_mode": "Periodic Commands", 
+   "filename": "/home/pau/feina/UPC/projecte/code/GDAIS/GDAIS-core/conf/instruments/SMIGOL/gps_1.json"
+  }, 
+  {
+   "operation_commands": [], 
+   "init_commands": [], 
+   "operation_mode": "Periodic Commands", 
+   "filename": "/home/pau/feina/UPC/projecte/code/GDAIS/GDAIS-core/conf/instruments/SMIGOL/gps_2.json"
+  }, 
+  {
+   "operation_commands": [], 
+   "init_commands": [], 
+   "operation_mode": "Periodic Commands", 
+   "filename": "/home/pau/feina/UPC/projecte/code/GDAIS/GDAIS-core/conf/instruments/SMIGOL/gps_3.json"
+  }, 
+  {
+   "operation_commands": [], 
+   "init_commands": [], 
+   "operation_mode": "Periodic Commands", 
+   "filename": "/home/pau/feina/UPC/projecte/code/GDAIS/GDAIS-core/conf/instruments/SMIGOL/gps_4.json"
+  }
+ ], 
+ "name": "Equip SMIGOL", 
+ "short_name": "smigol"
+}
