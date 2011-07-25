@@ -110,7 +110,7 @@ class ProxyServer(TCPServer):
                         
                         # wait
                         loop = QEventLoop()
-                        QTimer.singleShot(2, loop.quit)
+                        QTimer.singleShot(0, loop.quit)
                         loop.exec_()
 
                         # read more
