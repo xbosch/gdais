@@ -101,6 +101,7 @@ class ProxyServer(TCPServer):
                 ser = serial.Serial(SERIAL_PORT, timeout=1)
             except serial.serialutil.SerialException:
                 self.log.exception("Could not open serial port, ending acquisition...")
+                self.reception_finished.emit()
                 return
 
             self.log.debug("Serial port open: {0}".format(ser.portstr))
