@@ -29,10 +29,14 @@ class GDAIS(QCoreApplication):
         parser.add_argument('equipment',  help='Equipment file (.json) to work with')
         parser.add_argument('-d', action='store_true', default=False, dest='background',
                                             help='Run in background')
+        parser.add_argument('--no-http-logging', action='store_false', default=True,
+                                            dest='http_logging',
+                                            help='Log messages to GDAIS-control HTTP server')
         
         args = parser.parse_args()
         self.equipment_file = os.path.abspath(args.equipment)
         self.in_background = args.background
+        self.http_logging = args.http_logging
         
         # output logging
         logging.basicConfig(
@@ -81,15 +85,16 @@ class GDAIS(QCoreApplication):
             QTimer.singleShot(0, self.quit) # exit GDAIS
             return
         
-        if self.in_background:
-            # start sending logs to control interface if running in background
+        if self.http_logging:
+            # start sending logs to control interface if argument provided
             host = '127.0.0.1:6543'
             url = '/log/{0}'.format(equipment.short_name)
             self.httpHandler = logging.handlers.HTTPHandler(host, url, method='POST')
             self.httpHandler.setLevel(logging.DEBUG)
             self.log.addHandler(self.httpHandler)
-        else:
-            # otherwise, send log output to console
+
+        if not self.in_background:
+            # send log output to console if not running in background
             consoleHandler = logging.StreamHandler()
             consoleHandler.setLevel(logging.DEBUG)
             self.log.addHandler(consoleHandler)
