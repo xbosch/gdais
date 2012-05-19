@@ -19,7 +19,7 @@ class GDAIS(QCoreApplication):
     BASE_PATH = '/home/pau/feina/UPC/projecte/code/GDAIS/GDAIS-core'
     
     # Signal to inform that a notification has to be sent
-    notify = pyqtSignal(str)
+    notification = pyqtSignal(str)
 
     def __init__(self, argv):
         QCoreApplication.__init__(self, argv)
@@ -46,6 +46,14 @@ class GDAIS(QCoreApplication):
                             filemode='w')
         self.log = logging.getLogger("GDAIS")
 
+        if not self.in_background:
+            # send log output to console if not running in background
+            consoleHandler = logging.StreamHandler()
+            consoleHandler.setLevel(logging.DEBUG)
+            self.log.addHandler(consoleHandler)
+        
+        self.log.info("Welcome to GDAIS!")
+
         # HTTP handler for remote logging
         self.httpHandler = None
         
@@ -69,7 +77,6 @@ class GDAIS(QCoreApplication):
         QTimer.singleShot(0, self.start)
     
     def start(self):
-        self.log.info("Welcome to GDAIS!")
         
         # start server for remote control
         self.control_server.quit_command_received.connect(self.quit)
@@ -93,19 +100,13 @@ class GDAIS(QCoreApplication):
             self.httpHandler.setLevel(logging.DEBUG)
             self.log.addHandler(self.httpHandler)
 
-        if not self.in_background:
-            # send log output to console if not running in background
-            consoleHandler = logging.StreamHandler()
-            consoleHandler.setLevel(logging.DEBUG)
-            self.log.addHandler(consoleHandler)
-        
         # load notifier and start it
         self.notifier.equipment = equipment.short_name
-        self.notify.connect(self.notifier.notify)
+        self.notification.connect(self.notifier.notify)
         self.notifier.start()
         
         # notify start event
-        self.notify.emit('start')
+        self.notification.emit('start')
         
         # start data recorder thread
         self.recorder.begin(equipment)
