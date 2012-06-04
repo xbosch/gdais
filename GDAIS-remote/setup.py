@@ -9,7 +9,7 @@ CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 requires = [
     'pyramid',
-    'SQLAlchemy',
+    'SQLAlchemy<1.3',
     'transaction',
     'repoze.tm2>=1.0b1', # default_commit_veto
     'zope.sqlalchemy',
@@ -37,6 +37,7 @@ setup(name='GDAIS-remote',
       include_package_data=True,
       zip_safe=False,
       test_suite='gdaisremote',
+      setup_requires = 'PasteScript',
       install_requires = requires,
       entry_points = """\
       [paste.app_factory]
