@@ -51,7 +51,8 @@ class LogModel(Base):
     equipment = relationship(
                     EquipmentModel,
                     backref=backref('logs', order_by=id.desc),
-                    cascade="all, delete, delete-orphan")
+                    cascade="all, delete, delete-orphan",
+                    single_parent=True)
 
     def __init__(self, name, levelno, levelname, msg, date, exc_text, exc_info, equip_id):
         self.name = name
